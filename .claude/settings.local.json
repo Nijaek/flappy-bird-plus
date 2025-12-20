@@ -5,7 +5,8 @@
       "WebFetch(domain:localhost)",
       "Bash(curl:*)",
       "mcp__ide__getDiagnostics",
-      "Bash(npx tsc:*)"
+      "Bash(npx tsc:*)",
+      "Bash(powershell -Command:*)"
     ]
   }
 }

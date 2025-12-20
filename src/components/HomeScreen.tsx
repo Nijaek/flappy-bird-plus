@@ -14,6 +14,15 @@ import {
   drawPlayIcon,
 } from '@/game/renderer';
 
+// Click sound for buttons
+const playClickSound = () => {
+  const audio = new Audio('/sounds/click_001.ogg');
+  audio.volume = 0.5;
+  audio.play().catch(() => {
+    // Ignore errors (e.g., if user hasn't interacted with page yet)
+  });
+};
+
 interface HomeScreenProps {
   onStart: () => void;
 }
@@ -338,14 +347,19 @@ export default function HomeScreen({ onStart }: HomeScreenProps) {
 
     if (isInBounds(x, y, bounds.play)) {
       setIsPlayPressed(true);
+      playClickSound();
     } else if (isInBounds(x, y, bounds.score)) {
       setIsScorePressed(true);
+      playClickSound();
     } else if (isInBounds(x, y, bounds.shop)) {
       setIsShopPressed(true);
+      playClickSound();
     } else if (isInBounds(x, y, bounds.account)) {
       setIsAccountPressed(true);
+      playClickSound();
     } else if (isInBounds(x, y, bounds.settings)) {
       setIsSettingsPressed(true);
+      playClickSound();
     }
   }, [getButtonBounds]);
 

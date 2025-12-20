@@ -665,3 +665,96 @@ export function drawPlayIcon(
   ctx.lineWidth = 2;
   ctx.stroke();
 }
+
+// =============================================================================
+// PIPE RENDERING
+// =============================================================================
+
+/**
+ * Draw a pipe (top or bottom) with pixelated shading
+ * @param isTop - true for top pipe (cap at bottom), false for bottom pipe (cap at top)
+ */
+export function drawPipe(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  width: number,
+  height: number,
+  isTop: boolean
+) {
+  const capHeight = 26;
+  const capOverhang = 3; // How much the cap extends beyond the body
+
+  // Colors for shading
+  const pipeLight = '#8CD038';
+  const pipeMid = '#73BF2E';
+  const pipeDark = '#557B1F';
+  const pipeOutline = '#3D5A14';
+
+  const capLight = '#6DC030';
+  const capMid = '#58A020';
+  const capDark = '#3D7010';
+
+  // Pipe body
+  const bodyX = x;
+  const bodyY = isTop ? y : y + capHeight;
+  const bodyHeight = height - capHeight;
+
+  // Draw pipe body outline
+  ctx.fillStyle = pipeOutline;
+  ctx.fillRect(bodyX - 1, bodyY, width + 2, bodyHeight);
+
+  // Draw pipe body with shading (left highlight, right shadow)
+  const stripeWidth = Math.floor(width / 4);
+
+  // Left highlight
+  ctx.fillStyle = pipeLight;
+  ctx.fillRect(bodyX, bodyY, stripeWidth, bodyHeight);
+
+  // Middle sections
+  ctx.fillStyle = pipeMid;
+  ctx.fillRect(bodyX + stripeWidth, bodyY, stripeWidth * 2, bodyHeight);
+
+  // Right shadow
+  ctx.fillStyle = pipeDark;
+  ctx.fillRect(bodyX + stripeWidth * 3, bodyY, width - stripeWidth * 3, bodyHeight);
+
+  // Pipe cap
+  const capX = x - capOverhang;
+  const capY = isTop ? y + height - capHeight : y;
+  const capWidth = width + capOverhang * 2;
+
+  // Draw cap outline
+  ctx.fillStyle = pipeOutline;
+  ctx.fillRect(capX - 1, capY - 1, capWidth + 2, capHeight + 2);
+
+  // Draw cap body with shading
+  const capStripeWidth = Math.floor(capWidth / 4);
+
+  // Left highlight
+  ctx.fillStyle = capLight;
+  ctx.fillRect(capX, capY, capStripeWidth, capHeight);
+
+  // Middle sections
+  ctx.fillStyle = capMid;
+  ctx.fillRect(capX + capStripeWidth, capY, capStripeWidth * 2, capHeight);
+
+  // Right shadow
+  ctx.fillStyle = capDark;
+  ctx.fillRect(capX + capStripeWidth * 3, capY, capWidth - capStripeWidth * 3, capHeight);
+
+  // Add horizontal line details on cap for pixel art look
+  ctx.fillStyle = pipeOutline;
+  if (isTop) {
+    // Lines at top of cap (bottom of top pipe)
+    ctx.fillRect(capX, capY, capWidth, 2);
+  } else {
+    // Lines at bottom of cap (top of bottom pipe)
+    ctx.fillRect(capX, capY + capHeight - 2, capWidth, 2);
+  }
+
+  // Add vertical highlight line
+  ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+  ctx.fillRect(bodyX + 2, bodyY, 2, bodyHeight);
+  ctx.fillRect(capX + 2, capY, 2, capHeight);
+}

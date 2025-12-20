@@ -82,7 +82,7 @@ export default function GetReadyScreen({ onStart }: GetReadyScreenProps) {
   ) => {
     ctx.save();
     ctx.translate(x, y);
-    ctx.scale(-scale * 0.5, scale * 0.5); // 50% smaller, flipped horizontally
+    ctx.scale(-scale * 0.4, scale * 0.4); // 60% smaller, flipped horizontally
 
     const black = '#000000';
     const white = '#FFFFFF';
@@ -104,25 +104,22 @@ export default function GetReadyScreen({ onStart }: GetReadyScreenProps) {
     ctx.fillRect(-14, -27, 8, 11);  // Ring finger
     ctx.fillRect(-6, -31, 8, 15);   // Middle finger
 
-    // White fill (slightly inset from black outline)
+    // White fill (2px inset from black outline for consistent border)
     ctx.fillStyle = white;
 
-    // Index finger fill (leave bottom border visible)
-    ctx.fillRect(3, -46, 6, 22);
-
-    // Palm fill
+    // Palm fill (draw first as base)
     ctx.fillRect(-20, -18, 32, 20);
 
-    // Thumb fill
-    ctx.fillRect(12, -20, 6, 10);
+    // Index finger fill (2px border all sides, overlap into palm)
+    ctx.fillRect(3, -46, 6, 30);
 
-    // Three folded fingers fill - thicker (leave bottom borders visible)
-    ctx.fillRect(-20, -25, 4, 5);   // Pinky (moved up)
-    ctx.fillRect(-12, -25, 4, 5);   // Ring finger
-    ctx.fillRect(-4, -29, 4, 9);    // Middle finger
+    // Thumb fill (2px border on top/right/bottom, overlap into palm on left)
+    ctx.fillRect(10, -20, 8, 10);
 
-    // Connect finger to palm (fill gap)
-    ctx.fillRect(3, -24, 6, 6);
+    // Three folded fingers fill (2px border, overlap into palm)
+    ctx.fillRect(-20, -25, 4, 9);   // Pinky
+    ctx.fillRect(-12, -25, 4, 9);   // Ring finger
+    ctx.fillRect(-4, -29, 4, 13);   // Middle finger
 
     // Motion lines (will appear on opposite side due to flip)
     ctx.fillStyle = black;

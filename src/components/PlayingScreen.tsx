@@ -9,6 +9,7 @@ import {
   drawBushes,
   drawGround,
   drawBird,
+  drawPipe,
 } from '@/game/renderer';
 
 interface PlayingScreenProps {
@@ -21,6 +22,26 @@ const playWingSound = () => {
   audio.volume = 0.5;
   audio.play().catch(() => {});
 };
+
+const playPointSound = () => {
+  const audio = new Audio('/sounds/point.ogg');
+  audio.volume = 0.5;
+  audio.play().catch(() => {});
+};
+
+const playHitSound = () => {
+  const audio = new Audio('/sounds/hit.ogg');
+  audio.volume = 0.5;
+  audio.play().catch(() => {});
+};
+
+// Pipe interface
+interface Pipe {
+  x: number;
+  gapY: number; // Center Y position of the gap
+  gap: number; // Gap size (fixed when pipe is spawned)
+  passed: boolean; // Whether the bird has passed this pipe for scoring
+}
 
 export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -38,6 +59,11 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
   const scoreRef = useRef(0);
   const gameActiveRef = useRef(true);
 
+  // Pipe state
+  const pipesRef = useRef<Pipe[]>([]);
+  const lastPipeSpawnRef = useRef(0);
+  const pipeCountRef = useRef(0); // Total pipes spawned (for difficulty)
+
   // Parallax scroll offsets
   const scrollOffsetRef = useRef(0);
 
@@ -46,6 +72,15 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
   const FLAP_VELOCITY = -3.5;
   const MAX_FALL_SPEED = 2.5;
   const ROTATION_MULTIPLIER = 0.25;
+
+  // Pipe constants
+  const PIPE_WIDTH = Math.floor(GAME.PIPE_WIDTH * 0.8); // 20% narrower
+  const PIPE_SPEED = 1; // Slowed to match game speed
+  const PIPE_SPAWN_INTERVAL = 180; // Frames between pipe spawns
+  const BASE_GAP = 120; // Starting gap size
+  const MIN_GAP = 70; // Minimum gap size at max difficulty
+  const GAP_DECREASE_INTERVAL = 10; // Decrease gap every N points
+  const GAP_DECREASE_AMOUNT = 5; // How much to decrease per interval
 
   // Calculate scale factor
   const getScaleFactor = useCallback(() => {
@@ -120,6 +155,54 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
     ctx.fillText(scoreText, x, y);
   }, []);
 
+  // Calculate gap for next pipe based on pipe count
+  const getNextPipeGap = useCallback(() => {
+    const decreases = Math.floor(pipeCountRef.current / GAP_DECREASE_INTERVAL);
+    const gap = BASE_GAP - (decreases * GAP_DECREASE_AMOUNT);
+    return Math.max(gap, MIN_GAP);
+  }, []);
+
+  // Spawn a new pipe
+  const spawnPipe = useCallback((spawnX: number) => {
+    const gap = getNextPipeGap();
+    const groundY = GAME.HEIGHT - GAME.GROUND_HEIGHT;
+    const minGapY = 80 + gap / 2; // Minimum gap center Y
+    const maxGapY = groundY - 80 - gap / 2; // Maximum gap center Y
+    const gapY = minGapY + Math.random() * (maxGapY - minGapY);
+
+    pipesRef.current.push({
+      x: spawnX,
+      gapY,
+      gap, // Store the gap with the pipe
+      passed: false,
+    });
+    pipeCountRef.current++;
+  }, [getNextPipeGap]);
+
+  // Check collision between bird and pipes
+  const checkCollision = useCallback((birdX: number, birdY: number): boolean => {
+    const birdLeft = birdX - GAME.BIRD_WIDTH / 2 + 4; // Slightly smaller hitbox
+    const birdRight = birdX + GAME.BIRD_WIDTH / 2 - 4;
+    const birdTop = birdY - GAME.BIRD_HEIGHT / 2 + 4;
+    const birdBottom = birdY + GAME.BIRD_HEIGHT / 2 - 4;
+
+    for (const pipe of pipesRef.current) {
+      const pipeLeft = pipe.x;
+      const pipeRight = pipe.x + PIPE_WIDTH;
+      const gapTop = pipe.gapY - pipe.gap / 2;
+      const gapBottom = pipe.gapY + pipe.gap / 2;
+
+      // Check if bird is horizontally overlapping with pipe
+      if (birdRight > pipeLeft && birdLeft < pipeRight) {
+        // Check if bird is outside the gap vertically
+        if (birdTop < gapTop || birdBottom > gapBottom) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }, []);
+
   // Main render loop
   const render = useCallback((timestamp: number) => {
     const canvas = canvasRef.current;
@@ -144,6 +227,9 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
     const scaledHeight = GAME.HEIGHT * scale;
     const offsetX = (canvas.width - scaledWidth) / 2;
     const offsetY = (canvas.height - scaledHeight) / 2;
+
+    // Calculate extended width for landscape mode
+    const extraWidth = offsetX > 0 ? (offsetX / scale) + 50 : 50;
 
     // Update physics
     if (gameActiveRef.current) {
@@ -171,6 +257,44 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
         birdYRef.current = GAME.BIRD_HEIGHT / 2;
         birdVelocityRef.current = 0;
       }
+
+      // Pipe spawning (spawn beyond visible area for landscape mode)
+      lastPipeSpawnRef.current++;
+      if (lastPipeSpawnRef.current >= PIPE_SPAWN_INTERVAL) {
+        spawnPipe(GAME.WIDTH + extraWidth);
+        lastPipeSpawnRef.current = 0;
+      }
+
+      // Update pipes (move left and check scoring)
+      const pipesToRemove: number[] = [];
+      pipesRef.current.forEach((pipe, index) => {
+        // Move pipe left
+        pipe.x -= PIPE_SPEED;
+
+        // Check if bird passed the pipe (for scoring)
+        if (!pipe.passed && pipe.x + PIPE_WIDTH < GAME.BIRD_X) {
+          pipe.passed = true;
+          scoreRef.current++;
+          playPointSound();
+        }
+
+        // Mark pipes that are off screen for removal (account for landscape)
+        if (pipe.x + PIPE_WIDTH < -extraWidth) {
+          pipesToRemove.push(index);
+        }
+      });
+
+      // Remove off-screen pipes (iterate backwards to avoid index issues)
+      for (let i = pipesToRemove.length - 1; i >= 0; i--) {
+        pipesRef.current.splice(pipesToRemove[i], 1);
+      }
+
+      // Check pipe collision
+      if (checkCollision(GAME.BIRD_X, birdYRef.current)) {
+        playHitSound();
+        gameActiveRef.current = false;
+        onGameOver(scoreRef.current);
+      }
     }
 
     // Update scroll offset
@@ -180,8 +304,7 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
     const cityOffset = groundOffset * 0.2;
     const cloudOffset = groundOffset * 0.1;
 
-    // Calculate extended width
-    const extraWidth = offsetX > 0 ? (offsetX / scale) + 50 : 50;
+    // Use pre-calculated extraWidth
     const totalWidth = GAME.WIDTH + extraWidth * 2;
     const groundY = GAME.HEIGHT - GAME.GROUND_HEIGHT;
 
@@ -222,13 +345,32 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
 
     ctx.restore();
 
-    // Draw game elements
+    // Draw game elements (use extended coordinate system for landscape)
     ctx.save();
-    ctx.translate(offsetX, offsetY);
+    ctx.translate(offsetX - extraWidth * scale, offsetY);
     ctx.scale(scale, scale);
 
-    // Draw score
-    drawScore(ctx, scoreRef.current, GAME.WIDTH / 2, 40);
+    // Draw pipes (use each pipe's stored gap)
+    pipesRef.current.forEach((pipe) => {
+      // Offset pipe x to account for extended coordinate system
+      const pipeDrawX = pipe.x + extraWidth;
+
+      // Top pipe (extends from top of screen to gap)
+      const topPipeHeight = pipe.gapY - pipe.gap / 2;
+      if (topPipeHeight > 0) {
+        drawPipe(ctx, pipeDrawX, 0, PIPE_WIDTH, topPipeHeight, true);
+      }
+
+      // Bottom pipe (extends from gap to ground)
+      const bottomPipeY = pipe.gapY + pipe.gap / 2;
+      const bottomPipeHeight = groundY - bottomPipeY;
+      if (bottomPipeHeight > 0) {
+        drawPipe(ctx, pipeDrawX, bottomPipeY, PIPE_WIDTH, bottomPipeHeight, false);
+      }
+    });
+
+    // Draw score (offset for extended coordinate system)
+    drawScore(ctx, scoreRef.current, GAME.WIDTH / 2 + extraWidth, 40);
 
     // Update bird animation frame
     if (timestamp - lastBirdFrameTime.current > GAME.BIRD_ANIMATION_SPEED) {
@@ -248,14 +390,14 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
     // Calculate bird rotation based on velocity
     const birdRotation = Math.min(Math.max(birdVelocityRef.current * ROTATION_MULTIPLIER, -0.5), Math.PI / 2);
 
-    // Draw bird
-    drawBird(ctx, GAME.BIRD_X, birdYRef.current, birdFrameRef.current, birdRotation, 1);
+    // Draw bird (offset for extended coordinate system)
+    drawBird(ctx, GAME.BIRD_X + extraWidth, birdYRef.current, birdFrameRef.current, birdRotation, 1);
 
     ctx.restore();
 
     // Continue animation loop
     animationRef.current = requestAnimationFrame(render);
-  }, [getScaleFactor, drawScore, onGameOver]);
+  }, [getScaleFactor, drawScore, onGameOver, spawnPipe, checkCollision]);
 
   // Start animation loop
   useEffect(() => {

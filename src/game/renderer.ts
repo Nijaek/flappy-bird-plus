@@ -128,7 +128,9 @@ export function drawCitySilhouetteExtended(
   tallBuildings: boolean = false
 ) {
   const s = 4; // Pixel size for clean pixel art
-  const heightMultiplier = tallBuildings ? 1.6 : 1.0;
+  const heightScale = 0.6; // 40% shorter buildings
+  const widthScale = 0.8; // Wider buildings (less reduction)
+  const heightMultiplier = (tallBuildings ? 1.6 : 1.0) * heightScale;
 
   // Building clusters - each cluster has overlapping buildings of varying widths/heights
   // Format: [xOffset, width (in s units), height (in s units)]
@@ -147,12 +149,10 @@ export function drawCitySilhouetteExtended(
     [[0, 5, 18], [4, 5, 14], [8, 5, 10]],
     // Cluster 7: two tall buildings
     [[0, 6, 20], [5, 6, 17]],
-    // Cluster 8: pyramid style
-    [[0, 4, 11], [3, 6, 17], [8, 4, 11]],
   ];
 
   const clusterWidths = clusters.map(cluster => {
-    const maxX = Math.max(...cluster.map(b => (b[0] + b[1]) * s));
+    const maxX = Math.max(...cluster.map(b => Math.floor((b[0] + b[1]) * widthScale) * s));
     return maxX + s * 3; // Add spacing between clusters
   });
 
@@ -177,31 +177,24 @@ export function drawCitySilhouetteExtended(
       const sortedBuildings = [...cluster].sort((a, b) => a[2] - b[2]);
 
       sortedBuildings.forEach(([bx, bw, bh]) => {
-        const buildingWidth = bw * s;
+        const buildingWidth = Math.floor(bw * widthScale) * s;
         const buildingHeight = Math.floor(bh * heightMultiplier) * s;
-        const x = adjustedClusterX + bx * s;
+        const x = adjustedClusterX + Math.floor(bx * widthScale) * s;
         const y = groundY - buildingHeight;
 
         // Skip if off screen
         if (x < -buildingWidth - 10 || x > width + 10) return;
 
-        // Building outline (dark green, drawn first)
-        ctx.fillStyle = '#5A8020';
+        // Building outline (cyan tint)
+        ctx.fillStyle = '#9ad4d5';
         ctx.fillRect(x - 1, y - 1, buildingWidth + 2, buildingHeight + 1);
 
-        // Building body (main color)
-        ctx.fillStyle = COLORS.cityGreen;
+        // Building body (main color - light green)
+        ctx.fillStyle = '#ddf3cf';
         ctx.fillRect(x, y, buildingWidth, buildingHeight);
 
-        // Left edge highlight (lighter)
-        ctx.fillStyle = '#B8E868';
-        ctx.fillRect(x, y, s, buildingHeight);
-
-        // Top edge highlight
-        ctx.fillRect(x, y, buildingWidth, s / 2);
-
-        // Window details (pixel-aligned grid)
-        ctx.fillStyle = '#C8F078';
+        // Window details (mint green)
+        ctx.fillStyle = '#b5e6cc';
         const windowSize = s;
         const windowSpacing = s * 2;
         for (let wy = y + s * 2; wy < groundY - s * 2; wy += windowSpacing) {
@@ -264,10 +257,10 @@ export function drawBushes(
   const s = 4; // Pixel size
 
   // Colors for depth layers
-  const backOutline = '#3A7010'; // Darker outline for back layer
-  const backFill = '#5A9818'; // Darker green for back layer
-  const frontOutline = '#4A9018'; // Outline for front layer
-  const frontFill = COLORS.bushGreen; // Normal green for front
+  const backOutline = '#4a9a6a'; // Darker outline for back layer
+  const backFill = '#65be88'; // Secondary bushes (behind)
+  const frontOutline = '#5ac06a'; // Outline for front layer
+  const frontFill = '#83e28a'; // Primary bushes (front)
 
   // Draw enough bushes to cover the entire width plus buffer
   const numBushes = Math.ceil((width + patternWidth) / bushSpacing) + 4;

@@ -184,7 +184,8 @@ export default function HomeScreen({ onStart }: HomeScreenProps) {
     drawSky(ctx, totalWidth, GAME.HEIGHT);
 
     // 1. CLOUDS (furthest back, slowest parallax) - spread across extended width
-    const cloudY = groundY - 50; // Position clouds higher up
+    // Position clouds so tops are visible above buildings, bottoms extend to ground
+    const cloudY = groundY - 30;
     const cloudSpacing = 100;
     const cloudPatternWidth = cloudSpacing * 20;
     const wrappedCloudOffset = cloudOffset % cloudPatternWidth;
@@ -193,7 +194,7 @@ export default function HomeScreen({ onStart }: HomeScreenProps) {
     for (let i = -6; i < numClouds; i++) {
       const baseX = i * cloudSpacing - wrappedCloudOffset;
       const yVariation = (i % 3 - 1) * 8;
-      const scaleVariation = 2.0 + (i % 4) * 0.2;
+      const scaleVariation = 2.0 + (i % 4) * 0.18; // Larger clouds (~20% taller)
       drawCloud(ctx, baseX, cloudY + yVariation, scaleVariation);
     }
 
@@ -328,6 +329,20 @@ export default function HomeScreen({ onStart }: HomeScreenProps) {
       }
     };
   }, [render]);
+
+  // Handle keyboard input (spacebar to start)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        playClickSound();
+        onStart();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onStart]);
 
   // Helper to check if point is within bounds
   const isInBounds = (x: number, y: number, bounds: { x: number; y: number; width: number; height: number }) => {

@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ============================================================================
+// Auth.js Required Tables
+// ============================================================================
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+
+  // Extended fields for game
+  displayName   String?   @db.VarChar(20)
+  pointsBalance Int       @default(0)
+  isGuest       Boolean   @default(false)
+  guestConvertedAt DateTime?
+
+  // Equipped cosmetics (future use)
+  equippedSkinId String?
+  equippedTrailId String?
+  equippedBgId   String?
+
+  // Relations
+  accounts      Account[]
+  sessions      Session[]
+  runs          Run[]
+  bestScore     UserBestScore?
+  pointTransactions PointTransaction[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([isGuest])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ============================================================================
+// Game Tables
+// ============================================================================
+
+model Run {
+  id         String   @id @default(cuid())
+  userId     String
+  score      Int
+  durationMs Int
+  runToken   String   @unique
+  ipHash     String?
+  flagged    Boolean  @default(false)
+  flagReason String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([score(sort: Desc)])
+}
+
+model UserBestScore {
+  userId     String   @id
+  bestScore  Int
+  achievedAt DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([bestScore(sort: Desc)])
+}
+
+model RunToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  used      Boolean  @default(false)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@index([token])
+  @@index([expiresAt])
+}
+
+model PointTransaction {
+  id        String   @id @default(cuid())
+  userId    String
+  delta     Int
+  reason    String   // 'run' | 'purchase' | 'admin' | 'guest_merge'
+  refId     String?  // Reference to run ID or item ID
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, createdAt(sort: Desc)])
+}
+
+// ============================================================================
+// Shop Tables (for future use)
+// ============================================================================
+
+model Item {
+  id          String   @id @default(cuid())
+  sku         String   @unique
+  name        String
+  type        String   // 'skin' | 'trail' | 'bg'
+  pricePoints Int
+  active      Boolean  @default(true)
+
+  userItems   UserItem[]
+
+  createdAt DateTime @default(now())
+}
+
+model UserItem {
+  id       String @id @default(cuid())
+  userId   String
+  itemId   String
+
+  item Item @relation(fields: [itemId], references: [id])
+
+  unlockedAt DateTime @default(now())
+
+  @@unique([userId, itemId])
+}

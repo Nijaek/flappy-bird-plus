@@ -248,6 +248,7 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
       const groundY = GAME.HEIGHT - GAME.GROUND_HEIGHT;
       if (birdYRef.current > groundY - GAME.BIRD_HEIGHT / 2) {
         birdYRef.current = groundY - GAME.BIRD_HEIGHT / 2;
+        playHitSound();
         gameActiveRef.current = false;
         onGameOver(scoreRef.current);
       }
@@ -297,8 +298,8 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
       }
     }
 
-    // Update scroll offset
-    scrollOffsetRef.current += 2;
+    // Update scroll offset (matches PIPE_SPEED)
+    scrollOffsetRef.current += PIPE_SPEED;
     const groundOffset = scrollOffsetRef.current;
     const bushOffset = groundOffset;
     const cityOffset = groundOffset * 0.2;

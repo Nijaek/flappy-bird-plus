@@ -13,7 +13,7 @@ import {
 } from '@/game/renderer';
 
 interface PlayingScreenProps {
-  onGameOver: (score: number, durationMs: number) => void;
+  onGameOver: (score: number, durationMs: number, frameData?: ImageData) => void;
 }
 
 // Sound effects
@@ -251,7 +251,18 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
         playHitSound();
         gameActiveRef.current = false;
         const durationMs = Math.round(timestamp - startTimeRef.current);
-        onGameOver(scoreRef.current, durationMs);
+
+        // Capture frame before game over
+        const canvas = canvasRef.current;
+        let frameData: ImageData | undefined;
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            frameData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          }
+        }
+
+        onGameOver(scoreRef.current, durationMs, frameData);
       }
 
       // Ceiling collision
@@ -296,7 +307,18 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
         playHitSound();
         gameActiveRef.current = false;
         const durationMs = Math.round(timestamp - startTimeRef.current);
-        onGameOver(scoreRef.current, durationMs);
+
+        // Capture frame before game over
+        const canvas = canvasRef.current;
+        let frameData: ImageData | undefined;
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          if (ctx) {
+            frameData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          }
+        }
+
+        onGameOver(scoreRef.current, durationMs, frameData);
       }
     }
 

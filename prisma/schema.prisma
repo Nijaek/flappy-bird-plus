@@ -18,7 +18,7 @@ model User {
   image         String?
 
   // Extended fields for game
-  displayName   String?   @db.VarChar(20)
+  displayName   String?   @unique @db.VarChar(20)
   pointsBalance Int       @default(0)
   isGuest       Boolean   @default(false)
   guestConvertedAt DateTime?

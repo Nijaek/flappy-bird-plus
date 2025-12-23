@@ -36,7 +36,14 @@
       "Bash(npx prisma db push:*)",
       "Skill(superpowers:using-git-worktrees)",
       "Bash(git worktree add:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(git push:*)",
+      "Bash(npm run lint:*)",
+      "Bash(npm run type-check:*)",
+      "Skill(superpowers:finishing-a-development-branch)",
+      "Bash(git checkout:*)",
+      "Bash(git pull:*)",
+      "Bash(git merge:*)"
     ]
   }
 }

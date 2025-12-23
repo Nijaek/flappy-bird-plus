@@ -29,9 +29,10 @@ interface HomeScreenProps {
   isAuthenticated: boolean;
   userDisplayName: string | null;
   bestScore: number;
+  onAccountClick?: () => void;
 }
 
-export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, bestScore }: HomeScreenProps) {
+export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, bestScore, onAccountClick }: HomeScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
@@ -441,8 +442,8 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
     if (isAccountPressed && isInBounds(x, y, bounds.account)) {
       if (isAuthenticated) {
         signOut();
-      } else {
-        signIn('google');
+      } else if (onAccountClick) {
+        onAccountClick();
       }
     }
 

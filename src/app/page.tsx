@@ -23,7 +23,6 @@ export default function Home() {
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [needsUsername, setNeedsUsername] = useState(false);
-  const [isGuest, setIsGuest] = useState(false);
 
   const {
     isAuthenticated,
@@ -33,12 +32,11 @@ export default function Home() {
     resetSession,
   } = useGameSession();
 
+  // Check if authenticated user needs to set username (Google SSO)
   useEffect(() => {
     if (status === 'loading') return;
 
-    if (status === 'unauthenticated' && !isGuest) {
-      setShowAuthModal(true);
-    } else if (status === 'authenticated') {
+    if (status === 'authenticated') {
       setShowAuthModal(false);
       if (sessionData?.user && !sessionData.user.name) {
         fetch('/api/users/me')
@@ -52,7 +50,7 @@ export default function Home() {
           .catch(() => {});
       }
     }
-  }, [status, isGuest, sessionData]);
+  }, [status, sessionData]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -72,10 +70,18 @@ export default function Home() {
   const handleAuthComplete = useCallback(() => {
     setShowAuthModal(false);
     setNeedsUsername(false);
-    if (status === 'unauthenticated') {
-      setIsGuest(true);
+  }, []);
+
+  const handleCloseModal = useCallback(() => {
+    setShowAuthModal(false);
+    setNeedsUsername(false);
+  }, []);
+
+  const handleAccountClick = useCallback(() => {
+    if (!isAuthenticated) {
+      setShowAuthModal(true);
     }
-  }, [status]);
+  }, [isAuthenticated]);
 
   const handleGoToGetReady = useCallback(async () => {
     setGameState('getReady');
@@ -131,10 +137,6 @@ export default function Home() {
     );
   }
 
-  if (showAuthModal) {
-    return <AuthModal onComplete={handleAuthComplete} needsUsername={needsUsername} />;
-  }
-
   return (
     <>
       {gameState === 'home' && (
@@ -143,10 +145,18 @@ export default function Home() {
           isAuthenticated={isAuthenticated}
           userDisplayName={session?.user?.name || null}
           bestScore={bestScore}
+          onAccountClick={handleAccountClick}
         />
       )}
       {gameState === 'getReady' && <GetReadyScreen onStart={handleStartPlaying} />}
       {gameState === 'playing' && <PlayingScreen onGameOver={handleGameOver} />}
+      {showAuthModal && (
+        <AuthModal
+          onComplete={handleAuthComplete}
+          onClose={needsUsername ? undefined : handleCloseModal}
+          needsUsername={needsUsername}
+        />
+      )}
     </>
   );
 }

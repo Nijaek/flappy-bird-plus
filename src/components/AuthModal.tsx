@@ -8,6 +8,7 @@ type ModalState = 'SIGN_IN' | 'CREATE_ACCOUNT' | 'CHOOSE_USERNAME' | 'SUCCESS';
 
 interface AuthModalProps {
   onComplete: () => void;
+  onClose?: () => void;
   needsUsername?: boolean;
 }
 
@@ -19,7 +20,7 @@ interface FormErrors {
   form?: string;
 }
 
-export default function AuthModal({ onComplete, needsUsername = false }: AuthModalProps) {
+export default function AuthModal({ onComplete, onClose, needsUsername = false }: AuthModalProps) {
   const [modalState, setModalState] = useState<ModalState>(
     needsUsername ? 'CHOOSE_USERNAME' : 'SIGN_IN'
   );
@@ -114,8 +115,8 @@ export default function AuthModal({ onComplete, needsUsername = false }: AuthMod
       newErrors.password = 'Need lowercase letter';
     } else if (!/[0-9]/.test(password)) {
       newErrors.password = 'Need a number';
-    }
-    if (password !== confirmPassword) {
+    } else if (password !== confirmPassword) {
+      // Only check match after password itself is valid
       newErrors.confirmPassword = 'Passwords do not match';
     }
     setErrors(newErrors);
@@ -318,6 +319,11 @@ export default function AuthModal({ onComplete, needsUsername = false }: AuthMod
     return (
       <div className="auth-overlay">
         <div className="auth-modal">
+          {onClose && (
+            <button className="auth-close" onClick={onClose} aria-label="Close">
+              ✕
+            </button>
+          )}
           <h1 className="auth-title">Create Account</h1>
           <form className="auth-form" onSubmit={handleCreateAccount}>
             <div className="auth-field">
@@ -402,6 +408,11 @@ export default function AuthModal({ onComplete, needsUsername = false }: AuthMod
   return (
     <div className="auth-overlay">
       <div className="auth-modal">
+        {onClose && (
+          <button className="auth-close" onClick={onClose} aria-label="Close">
+            ✕
+          </button>
+        )}
         <h1 className="auth-title">Flappy Bird+</h1>
         <button className="auth-btn auth-btn-google" onClick={handleGoogleSignIn} disabled={isLoading}>
           <svg className="auth-google-icon" viewBox="0 0 24 24">

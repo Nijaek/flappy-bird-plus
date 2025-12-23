@@ -30,7 +30,14 @@ export async function GET(request: NextRequest) {
     // Get user's rank if not provided
     let userRank: number;
     if (rankParam) {
-      userRank = parseInt(rankParam);
+      const parsed = parseInt(rankParam);
+      if (isNaN(parsed) || parsed < 1) {
+        return NextResponse.json(
+          { error: { code: 'VALIDATION_ERROR', message: 'Invalid rank parameter' } },
+          { status: 400 }
+        );
+      }
+      userRank = parsed;
     } else {
       const rank = await redis.zrevrank(LEADERBOARD_KEY, userId);
       if (rank === null) {

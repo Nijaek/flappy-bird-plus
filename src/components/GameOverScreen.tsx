@@ -153,10 +153,6 @@ export default function GameOverScreen({
     ctx.imageSmoothingEnabled = false;
 
     const scale = getScaleFactor();
-    const scaledWidth = GAME.WIDTH * scale;
-    const scaledHeight = GAME.HEIGHT * scale;
-    const offsetX = (canvas.width - scaledWidth) / 2;
-    const offsetY = (canvas.height - scaledHeight) / 2;
 
     // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { signIn, signOut } from 'next-auth/react';
 import { COLORS, GAME, ANIMATION } from '@/game/constants';
 import {
   drawSky,
@@ -25,9 +26,12 @@ const playClickSound = () => {
 
 interface HomeScreenProps {
   onStart: () => void;
+  isAuthenticated: boolean;
+  userDisplayName: string | null;
+  bestScore: number;
 }
 
-export default function HomeScreen({ onStart }: HomeScreenProps) {
+export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, bestScore }: HomeScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
@@ -36,7 +40,6 @@ export default function HomeScreen({ onStart }: HomeScreenProps) {
   const [isShopPressed, setIsShopPressed] = useState(false);
   const [isAccountPressed, setIsAccountPressed] = useState(false);
   const [isSettingsPressed, setIsSettingsPressed] = useState(false);
-  const [bestScore] = useState(0); // TODO: Load from storage
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
   // Bird animation frame
@@ -250,23 +253,54 @@ export default function HomeScreen({ onStart }: HomeScreenProps) {
     const buttonsY = GAME.HEIGHT - GAME.GROUND_HEIGHT - 80;
 
     // =======================================================================
-    // DRAW BEST SCORE (far right with floating animation)
+    // DRAW USER INFO & BEST SCORE (top right with floating animation)
     // =======================================================================
     const scoreFloat = Math.sin(elapsed * 0.003) * 3;
     ctx.font = 'bold 14px "Press Start 2P", monospace';
     ctx.textAlign = 'right';
     ctx.textBaseline = 'top';
 
-    const scoreText = `Best: ${bestScore}`;
     const scoreX = GAME.WIDTH - 10;
-    const scoreY = 14 + scoreFloat;
+    let currentY = 14 + scoreFloat;
+
+    // Show username if logged in
+    if (isAuthenticated && userDisplayName) {
+      const displayName = userDisplayName.length > 12
+        ? userDisplayName.slice(0, 10) + '..'
+        : userDisplayName;
+
+      ctx.font = 'bold 10px "Press Start 2P", monospace';
+      ctx.fillStyle = COLORS.textOutline;
+      for (const [ox, oy] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
+        ctx.fillText(displayName, scoreX + ox, currentY + oy);
+      }
+      ctx.fillStyle = '#90EE90'; // Light green for logged in
+      ctx.fillText(displayName, scoreX, currentY);
+      currentY += 16;
+    }
+
+    // Best score
+    ctx.font = 'bold 14px "Press Start 2P", monospace';
+    const scoreText = `Best: ${bestScore}`;
 
     ctx.fillStyle = COLORS.textOutline;
     for (const [ox, oy] of [[-2, -2], [-2, 2], [2, -2], [2, 2], [-2, 0], [2, 0], [0, -2], [0, 2]]) {
-      ctx.fillText(scoreText, scoreX + ox, scoreY + oy);
+      ctx.fillText(scoreText, scoreX + ox, currentY + oy);
     }
     ctx.fillStyle = COLORS.textWhite;
-    ctx.fillText(scoreText, scoreX, scoreY);
+    ctx.fillText(scoreText, scoreX, currentY);
+
+    // Show hint for guests
+    if (!isAuthenticated) {
+      ctx.font = 'bold 8px "Press Start 2P", monospace';
+      const hintText = 'Sign in to save';
+      ctx.fillStyle = COLORS.textOutline;
+      for (const [ox, oy] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
+        ctx.fillText(hintText, scoreX + ox, currentY + 22 + oy);
+      }
+      ctx.fillStyle = '#FFD700'; // Gold hint
+      ctx.fillText(hintText, scoreX, currentY + 22);
+    }
 
     // =======================================================================
     // DRAW BUTTONS
@@ -317,7 +351,7 @@ export default function HomeScreen({ onStart }: HomeScreenProps) {
 
     // Continue animation loop
     animationRef.current = requestAnimationFrame(render);
-  }, [isPlayPressed, isScorePressed, isShopPressed, isAccountPressed, isSettingsPressed, bestScore, getScaleFactor]);
+  }, [isPlayPressed, isScorePressed, isShopPressed, isAccountPressed, isSettingsPressed, bestScore, isAuthenticated, userDisplayName, getScaleFactor]);
 
   // Start animation loop
   useEffect(() => {
@@ -405,7 +439,11 @@ export default function HomeScreen({ onStart }: HomeScreenProps) {
 
     // Check if release is within account button bounds
     if (isAccountPressed && isInBounds(x, y, bounds.account)) {
-      // TODO: Show account
+      if (isAuthenticated) {
+        signOut();
+      } else {
+        signIn('google');
+      }
     }
 
     // Check if release is within settings button bounds

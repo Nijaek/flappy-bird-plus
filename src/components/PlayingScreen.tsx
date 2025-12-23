@@ -13,7 +13,7 @@ import {
 } from '@/game/renderer';
 
 interface PlayingScreenProps {
-  onGameOver: (score: number) => void;
+  onGameOver: (score: number, durationMs: number) => void;
 }
 
 // Sound effects
@@ -250,7 +250,8 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
         birdYRef.current = groundY - GAME.BIRD_HEIGHT / 2;
         playHitSound();
         gameActiveRef.current = false;
-        onGameOver(scoreRef.current);
+        const durationMs = Math.round(timestamp - startTimeRef.current);
+        onGameOver(scoreRef.current, durationMs);
       }
 
       // Ceiling collision
@@ -294,7 +295,8 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
       if (checkCollision(GAME.BIRD_X, birdYRef.current)) {
         playHitSound();
         gameActiveRef.current = false;
-        onGameOver(scoreRef.current);
+        const durationMs = Math.round(timestamp - startTimeRef.current);
+        onGameOver(scoreRef.current, durationMs);
       }
     }
 

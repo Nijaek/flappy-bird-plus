@@ -1,22 +1,29 @@
 'use client';
 
 import { useState, useCallback, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
 import HomeScreen from '@/components/HomeScreen';
 import GetReadyScreen from '@/components/GetReadyScreen';
 import PlayingScreen from '@/components/PlayingScreen';
+import AuthModal from '@/components/AuthModal';
 import { useGameSession } from '@/hooks/useGameSession';
 
 type GameState = 'home' | 'getReady' | 'playing' | 'gameOver';
 
 export default function Home() {
+  const { status, data: sessionData } = useSession();
   const [gameState, setGameState] = useState<GameState>('home');
   const [lastScore, setLastScore] = useState(0);
-  const [sessionBest, setSessionBest] = useState(0); // For guests
-  const [userBest, setUserBest] = useState<number | null>(null); // For logged-in users
+  const [sessionBest, setSessionBest] = useState(0);
+  const [userBest, setUserBest] = useState<number | null>(null);
   const [lastSubmitResult, setLastSubmitResult] = useState<{
     isNewBest: boolean;
     rank: number | null;
   } | null>(null);
+
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [needsUsername, setNeedsUsername] = useState(false);
+  const [isGuest, setIsGuest] = useState(false);
 
   const {
     isAuthenticated,
@@ -26,7 +33,27 @@ export default function Home() {
     resetSession,
   } = useGameSession();
 
-  // Fetch user's best score on login
+  useEffect(() => {
+    if (status === 'loading') return;
+
+    if (status === 'unauthenticated' && !isGuest) {
+      setShowAuthModal(true);
+    } else if (status === 'authenticated') {
+      setShowAuthModal(false);
+      if (sessionData?.user && !sessionData.user.name) {
+        fetch('/api/users/me')
+          .then(res => res.ok ? res.json() : null)
+          .then(data => {
+            if (data?.user && !data.user.displayName) {
+              setNeedsUsername(true);
+              setShowAuthModal(true);
+            }
+          })
+          .catch(() => {});
+      }
+    }
+  }, [status, isGuest, sessionData]);
+
   useEffect(() => {
     if (isAuthenticated) {
       fetch('/api/users/me')
@@ -42,9 +69,16 @@ export default function Home() {
     }
   }, [isAuthenticated]);
 
+  const handleAuthComplete = useCallback(() => {
+    setShowAuthModal(false);
+    setNeedsUsername(false);
+    if (status === 'unauthenticated') {
+      setIsGuest(true);
+    }
+  }, [status]);
+
   const handleGoToGetReady = useCallback(async () => {
     setGameState('getReady');
-    // Start game session (get token if authenticated)
     await startGame();
   }, [startGame]);
 
@@ -56,12 +90,10 @@ export default function Home() {
     setLastScore(score);
     setLastSubmitResult(null);
 
-    // Update session best for guests
     if (!isAuthenticated) {
       setSessionBest(prev => Math.max(prev, score));
     }
 
-    // Submit score if authenticated
     if (isAuthenticated) {
       const result = await submitScore(score, durationMs);
       if (result) {
@@ -74,15 +106,34 @@ export default function Home() {
     }
 
     setGameState('gameOver');
-    // Go back to home after a delay
     setTimeout(() => {
       setGameState('home');
       resetSession();
     }, 2000);
   }, [isAuthenticated, submitScore, resetSession]);
 
-  // Calculate best score to display
   const bestScore = isAuthenticated ? (userBest ?? 0) : sessionBest;
+
+  if (status === 'loading') {
+    return (
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        height: '100vh',
+        background: '#70C5CE',
+        fontFamily: "'Press Start 2P', monospace",
+        fontSize: '12px',
+        color: '#543810'
+      }}>
+        Loading...
+      </div>
+    );
+  }
+
+  if (showAuthModal) {
+    return <AuthModal onComplete={handleAuthComplete} needsUsername={needsUsername} />;
+  }
 
   return (
     <>
@@ -96,7 +147,6 @@ export default function Home() {
       )}
       {gameState === 'getReady' && <GetReadyScreen onStart={handleStartPlaying} />}
       {gameState === 'playing' && <PlayingScreen onGameOver={handleGameOver} />}
-      {/* TODO: Add proper GameOver screen */}
     </>
   );
 }

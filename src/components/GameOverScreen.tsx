@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { COLORS, GAME } from '@/game/constants';
-import { drawButton } from '@/game/renderer';
+import { drawButton, drawPlayIcon } from '@/game/renderer';
 
 // Click sound for buttons
 const playClickSound = () => {
@@ -61,7 +61,7 @@ export default function GameOverScreen({
 
   // Panel dimensions
   const PANEL_WIDTH = 260;
-  const PANEL_HEIGHT = isAuthenticated ? 340 : 320;
+  const PANEL_HEIGHT = isAuthenticated ? 300 : 280;
   const ANIMATION_DURATION = 300;
 
   // Handle canvas resize
@@ -129,13 +129,10 @@ export default function GameOverScreen({
       }
     };
 
-    // Small delay before animation starts
-    const timeoutId = setTimeout(() => {
-      animationRef.current = requestAnimationFrame(animate);
-    }, 100);
+    // Start animation immediately
+    animationRef.current = requestAnimationFrame(animate);
 
     return () => {
-      clearTimeout(timeoutId);
       if (animationRef.current) {
         cancelAnimationFrame(animationRef.current);
       }
@@ -300,6 +297,20 @@ export default function GameOverScreen({
     setIsSignInPressed(false);
   }, []);
 
+  // Keyboard handler for spacebar to retry
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ') {
+        e.preventDefault();
+        playClickSound();
+        onPlayAgain();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onPlayAgain]);
+
   return (
     <>
       <canvas
@@ -443,33 +454,19 @@ function drawGameOverContent(
   ctx.fillText(String(score), centerX, currentY);
   currentY += 30;
 
-  // NEW BEST indicator
+  // NEW BEST indicator (only shown when it's a new best)
   if (isNewBest) {
-    ctx.font = 'bold 10px "Press Start 2P", monospace';
+    ctx.font = 'bold 12px "Press Start 2P", monospace';
     ctx.fillStyle = COLORS.textOutline;
-    for (const [ox, oy] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
-      ctx.fillText('NEW BEST!', centerX + ox, currentY + oy);
+    for (const [ox, oy] of [[-2, -2], [-2, 2], [2, -2], [2, 2]]) {
+      ctx.fillText('NEW HIGH SCORE!', centerX + ox, currentY + oy);
     }
     ctx.fillStyle = COLORS.medalGold;
-    ctx.fillText('NEW BEST!', centerX, currentY);
-    currentY += 18;
+    ctx.fillText('NEW HIGH SCORE!', centerX, currentY);
+    currentY += 24;
+  } else {
+    currentY += 10; // Add some spacing when no new best
   }
-
-  // Best score
-  ctx.font = 'bold 10px "Press Start 2P", monospace';
-  ctx.fillStyle = COLORS.textOutline;
-  const bestLabel = isAuthenticated ? 'YOUR BEST' : 'SESSION BEST';
-  ctx.fillText(bestLabel, centerX, currentY);
-  currentY += 14;
-
-  ctx.font = 'bold 16px "Press Start 2P", monospace';
-  ctx.fillStyle = COLORS.textOutline;
-  for (const [ox, oy] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
-    ctx.fillText(String(bestScore), centerX + ox, currentY + oy);
-  }
-  ctx.fillStyle = COLORS.textWhite;
-  ctx.fillText(String(bestScore), centerX, currentY);
-  currentY += 28;
 
   // Leaderboard section (authenticated) or sign-in prompt (guest)
   if (isAuthenticated && leaderboardData) {
@@ -489,18 +486,14 @@ function drawGameOverContent(
   drawButton(ctx, playAgainX, buttonY, buttonWidth, buttonHeight, isPlayAgainPressed);
   drawButton(ctx, homeX, buttonY, buttonWidth, buttonHeight, isHomePressed);
 
-  // Button labels
-  ctx.font = 'bold 8px "Press Start 2P", monospace';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
+  // Button icons
+  const playIconX = playAgainX + buttonWidth / 2;
+  const playIconY = buttonY + buttonHeight / 2 + (isPlayAgainPressed ? 2 : 0);
+  drawPlayIcon(ctx, playIconX, playIconY, 20);
 
-  const playLabelY = buttonY + buttonHeight / 2 + (isPlayAgainPressed ? 2 : 0);
-  ctx.fillStyle = COLORS.textOutline;
-  ctx.fillText('RETRY', playAgainX + buttonWidth / 2, playLabelY);
-
-  const homeLabelY = buttonY + buttonHeight / 2 + (isHomePressed ? 2 : 0);
-  ctx.fillStyle = COLORS.textOutline;
-  ctx.fillText('HOME', homeX + buttonWidth / 2, homeLabelY);
+  const homeIconX = homeX + buttonWidth / 2;
+  const homeIconY = buttonY + buttonHeight / 2 + (isHomePressed ? 2 : 0);
+  drawHomeIcon(ctx, homeIconX, homeIconY, 18);
 }
 
 function drawLeaderboardSection(
@@ -578,4 +571,34 @@ function drawSignInPrompt(
   ctx.font = 'bold 8px "Press Start 2P", monospace';
   ctx.fillStyle = COLORS.textOutline;
   ctx.fillText('SIGN IN', centerX, buttonY + buttonHeight / 2 - 4 + (isSignInPressed ? 2 : 0));
+}
+
+// Helper: Draw home icon (house shape)
+function drawHomeIcon(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  size: number = 18
+) {
+  const halfSize = size / 2;
+
+  // Roof (triangle)
+  ctx.fillStyle = COLORS.textOutline;
+  ctx.beginPath();
+  ctx.moveTo(x, y - halfSize); // Top point
+  ctx.lineTo(x - halfSize - 2, y - 2); // Left eave
+  ctx.lineTo(x + halfSize + 2, y - 2); // Right eave
+  ctx.closePath();
+  ctx.fill();
+
+  // House body (rectangle)
+  const bodyWidth = size * 0.7;
+  const bodyHeight = size * 0.5;
+  ctx.fillRect(x - bodyWidth / 2, y - 2, bodyWidth, bodyHeight);
+
+  // Door (small rectangle in center)
+  ctx.fillStyle = COLORS.panelTan;
+  const doorWidth = bodyWidth * 0.35;
+  const doorHeight = bodyHeight * 0.7;
+  ctx.fillRect(x - doorWidth / 2, y - 2 + bodyHeight - doorHeight, doorWidth, doorHeight);
 }

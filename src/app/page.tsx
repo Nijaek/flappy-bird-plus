@@ -5,6 +5,7 @@ import { useSession } from 'next-auth/react';
 import HomeScreen from '@/components/HomeScreen';
 import GetReadyScreen from '@/components/GetReadyScreen';
 import PlayingScreen from '@/components/PlayingScreen';
+import GameOverScreen from '@/components/GameOverScreen';
 import AuthModal from '@/components/AuthModal';
 import { useGameSession } from '@/hooks/useGameSession';
 
@@ -19,6 +20,17 @@ export default function Home() {
   const [lastSubmitResult, setLastSubmitResult] = useState<{
     isNewBest: boolean;
     rank: number | null;
+  } | null>(null);
+  const [gameFrameData, setGameFrameData] = useState<ImageData | null>(null);
+  const [nearbyLeaderboard, setNearbyLeaderboard] = useState<{
+    playerRank: number;
+    totalPlayers: number;
+    nearbyPlayers: Array<{
+      rank: number;
+      displayName: string;
+      bestScore: number;
+      isPlayer: boolean;
+    }>;
   } | null>(null);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -86,31 +98,75 @@ export default function Home() {
     setGameState('playing');
   }, []);
 
-  const handleGameOver = useCallback(async (score: number, durationMs: number) => {
+  const handleGameOver = useCallback(async (score: number, durationMs: number, frameData?: ImageData) => {
     setLastScore(score);
     setLastSubmitResult(null);
+    setNearbyLeaderboard(null);
+
+    if (frameData) {
+      setGameFrameData(frameData);
+    }
 
     if (!isAuthenticated) {
       setSessionBest(prev => Math.max(prev, score));
     }
 
+    let userRank: number | null = null;
+
     if (isAuthenticated) {
       const result = await submitScore(score, durationMs);
       if (result) {
         setUserBest(result.you.bestScore);
+        userRank = result.you.rank;
         setLastSubmitResult({
           isNewBest: result.you.isNewBest,
           rank: result.you.rank,
         });
+
+        // Fetch nearby leaderboard
+        if (userRank !== null) {
+          try {
+            const response = await fetch(`/api/leaderboard/nearby?rank=${userRank}`);
+            if (response.ok) {
+              const data = await response.json();
+              setNearbyLeaderboard({
+                playerRank: userRank,
+                totalPlayers: data.totalPlayers,
+                nearbyPlayers: data.nearbyPlayers,
+              });
+            }
+          } catch (err) {
+            console.error('Failed to fetch nearby leaderboard:', err);
+          }
+        }
       }
     }
 
     setGameState('gameOver');
-    setTimeout(() => {
-      setGameState('home');
-      resetSession();
-    }, 2000);
-  }, [isAuthenticated, submitScore, resetSession]);
+  }, [isAuthenticated, submitScore]);
+
+  const handlePlayAgain = useCallback(async () => {
+    setGameFrameData(null);
+    setNearbyLeaderboard(null);
+    resetSession();
+    setGameState('getReady');
+    await startGame();
+  }, [resetSession, startGame]);
+
+  const handleGoHome = useCallback(() => {
+    setGameFrameData(null);
+    setNearbyLeaderboard(null);
+    resetSession();
+    setGameState('home');
+  }, [resetSession]);
+
+  const handleSignInFromGameOver = useCallback(() => {
+    setGameFrameData(null);
+    setNearbyLeaderboard(null);
+    resetSession();
+    setShowAuthModal(true);
+    setGameState('home');
+  }, [resetSession]);
 
   const bestScore = isAuthenticated ? (userBest ?? 0) : sessionBest;
 
@@ -147,6 +203,19 @@ export default function Home() {
       )}
       {gameState === 'getReady' && <GetReadyScreen onStart={handleStartPlaying} />}
       {gameState === 'playing' && <PlayingScreen onGameOver={handleGameOver} />}
+      {gameState === 'gameOver' && (
+        <GameOverScreen
+          score={lastScore}
+          bestScore={bestScore}
+          isNewBest={lastSubmitResult?.isNewBest ?? false}
+          isAuthenticated={isAuthenticated}
+          leaderboardData={nearbyLeaderboard}
+          onPlayAgain={handlePlayAgain}
+          onHome={handleGoHome}
+          onSignIn={handleSignInFromGameOver}
+          gameFrameData={gameFrameData}
+        />
+      )}
     </>
   );
 }

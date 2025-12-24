@@ -113,17 +113,11 @@ export default function Home() {
     setNeedsUsername(false);
   }, []);
 
-  const handleAccountClick = useCallback(() => {
-    if (!isAuthenticated) {
-      setShowAuthModal(true);
-    }
-  }, [isAuthenticated]);
-
   const handleLeaderboardClick = useCallback(() => {
     setShowLeaderboardModal(true);
   }, []);
 
-  const handleAccountClickNew = useCallback(() => {
+  const handleAccountClick = useCallback(() => {
     if (isAuthenticated) {
       setShowAccountModal(true);
     } else {
@@ -237,7 +231,7 @@ export default function Home() {
           isAuthenticated={isAuthenticated}
           userDisplayName={session?.user?.displayName || null}
           bestScore={bestScore}
-          onAccountClick={handleAccountClickNew}
+          onAccountClick={handleAccountClick}
           onLeaderboardClick={handleLeaderboardClick}
         />
       )}

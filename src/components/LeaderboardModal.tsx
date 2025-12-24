@@ -27,6 +27,7 @@ export default function LeaderboardModal({ onClose, isAuthenticated }: Leaderboa
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const currentOffsetRef = useRef(0);
@@ -51,14 +52,15 @@ export default function LeaderboardModal({ onClose, isAuthenticated }: Leaderboa
       }
 
       const res = await fetch(url);
-      if (res.ok) {
-        const data = await res.json();
-        return data;
+      if (!res.ok) {
+        throw new Error('Failed to load leaderboard');
       }
+      const data = await res.json();
+      return data;
     } catch (error) {
       console.error('Failed to fetch leaderboard:', error);
+      return null;
     }
-    return null;
   }, []);
 
   const fetchUserRank = useCallback(async () => {
@@ -84,6 +86,7 @@ export default function LeaderboardModal({ onClose, isAuthenticated }: Leaderboa
   useEffect(() => {
     const loadInitial = async () => {
       setIsLoading(true);
+      setError(null);
       const [leaderboardData] = await Promise.all([
         fetchLeaderboard(0),
         fetchUserRank(),
@@ -94,6 +97,8 @@ export default function LeaderboardModal({ onClose, isAuthenticated }: Leaderboa
         setTotal(leaderboardData.total);
         setHasMore(leaderboardData.leaderboard.length < leaderboardData.total);
         currentOffsetRef.current = leaderboardData.leaderboard.length;
+      } else {
+        setError('Failed to load leaderboard');
       }
       setIsLoading(false);
     };
@@ -107,16 +112,21 @@ export default function LeaderboardModal({ onClose, isAuthenticated }: Leaderboa
       clearTimeout(searchTimeoutRef.current);
     }
 
-    if (searchQuery.length === 0) {
+    const trimmedQuery = searchQuery.trim();
+
+    if (trimmedQuery.length === 0) {
       // Reset to initial state
       const resetToInitial = async () => {
         setIsLoading(true);
+        setError(null);
         const data = await fetchLeaderboard(0);
         if (data) {
           setEntries(data.leaderboard);
           setTotal(data.total);
           setHasMore(data.leaderboard.length < data.total);
           currentOffsetRef.current = data.leaderboard.length;
+        } else {
+          setError('Failed to load leaderboard');
         }
         setIsLoading(false);
       };
@@ -124,15 +134,18 @@ export default function LeaderboardModal({ onClose, isAuthenticated }: Leaderboa
       return;
     }
 
-    if (searchQuery.length < 2) return;
+    if (trimmedQuery.length < 2) return;
 
     searchTimeoutRef.current = setTimeout(async () => {
       setIsLoading(true);
-      const data = await fetchLeaderboard(0, searchQuery);
+      setError(null);
+      const data = await fetchLeaderboard(0, trimmedQuery);
       if (data) {
         setEntries(data.leaderboard);
         setTotal(data.total);
         setHasMore(false); // No pagination for search results
+      } else {
+        setError('Failed to search leaderboard');
       }
       setIsLoading(false);
     }, 300);
@@ -171,6 +184,7 @@ export default function LeaderboardModal({ onClose, isAuthenticated }: Leaderboa
             type="text"
             className="leaderboard-search-input"
             placeholder="Search username..."
+            aria-label="Search leaderboard by username"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -189,13 +203,15 @@ export default function LeaderboardModal({ onClose, isAuthenticated }: Leaderboa
         <div className="leaderboard-list">
           {isLoading ? (
             <div className="leaderboard-loading">Loading...</div>
+          ) : error ? (
+            <div className="leaderboard-empty">{error}</div>
           ) : entries.length === 0 ? (
             <div className="leaderboard-empty">
               {searchQuery ? 'No results found' : 'No scores yet'}
             </div>
           ) : (
-            entries.map((entry, index) => (
-              <div key={`${entry.rank}-${index}`} className="leaderboard-entry">
+            entries.map((entry) => (
+              <div key={`${entry.displayName}-${entry.rank}`} className="leaderboard-entry">
                 <span className="leaderboard-rank">#{entry.rank ?? '-'}</span>
                 <span className="leaderboard-name">{entry.displayName}</span>
                 <span className="leaderboard-score">{entry.bestScore}</span>

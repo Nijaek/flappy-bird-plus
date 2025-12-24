@@ -48,22 +48,25 @@ export default function Home() {
 
   // Check if authenticated user needs to set username (Google SSO)
   useEffect(() => {
+    console.log('[page] Auth status:', status, 'sessionData:', sessionData?.user);
     if (status === 'loading') return;
 
     if (status === 'authenticated') {
+      console.log('[page] User is authenticated, closing modal');
       setShowAuthModal(false);
       setIsInitialPrompt(false);
-      if (sessionData?.user && !sessionData.user.name) {
-        fetch('/api/users/me')
-          .then(res => res.ok ? res.json() : null)
-          .then(data => {
-            if (data?.user && !data.user.displayName) {
-              setNeedsUsername(true);
-              setShowAuthModal(true);
-            }
-          })
-          .catch(() => {});
-      }
+      // Always check if user needs to set displayName for Google OAuth users
+      fetch('/api/users/me')
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          console.log('[page] User data:', data);
+          if (data?.user && !data.user.displayName) {
+            console.log('[page] User needs username');
+            setNeedsUsername(true);
+            setShowAuthModal(true);
+          }
+        })
+        .catch((err) => console.error('[page] Error fetching user:', err));
     }
   }, [status, sessionData]);
 
@@ -73,6 +76,7 @@ export default function Home() {
     if (hasShownInitialPrompt.current) return;
 
     if (status === 'unauthenticated') {
+      console.log('[page] User is unauthenticated, showing initial prompt');
       hasShownInitialPrompt.current = true;
       setIsInitialPrompt(true);
       setShowAuthModal(true);
@@ -215,7 +219,7 @@ export default function Home() {
         <HomeScreen
           onStart={handleGoToGetReady}
           isAuthenticated={isAuthenticated}
-          userDisplayName={session?.user?.name || null}
+          userDisplayName={session?.user?.displayName || null}
           bestScore={bestScore}
           onAccountClick={handleAccountClick}
         />

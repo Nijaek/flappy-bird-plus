@@ -6,6 +6,7 @@ import bcrypt from 'bcryptjs';
 import { prisma } from './prisma';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
+  debug: true,
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
   providers: [
@@ -56,21 +57,76 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     }),
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async signIn({ user, account, profile }) {
+      console.log('[auth] signIn callback:', { user, account: account?.provider, profile: profile?.email });
+
+      // Allow OAuth sign-in even if an account with same email exists
+      // This links the OAuth account to the existing user
+      if (account?.provider === 'google' && profile?.email) {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: profile.email as string },
+          include: { accounts: true },
+        });
+
+        if (existingUser) {
+          // Check if Google account is already linked
+          const googleAccount = existingUser.accounts.find(a => a.provider === 'google');
+          if (!googleAccount) {
+            // Link the Google account to existing user
+            await prisma.account.create({
+              data: {
+                userId: existingUser.id,
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token,
+                refresh_token: account.refresh_token,
+                expires_at: account.expires_at,
+                token_type: account.token_type,
+                scope: account.scope,
+                id_token: account.id_token,
+              },
+            });
+            // Update user info from Google profile
+            await prisma.user.update({
+              where: { id: existingUser.id },
+              data: {
+                name: profile.name as string,
+                image: profile.picture as string,
+              },
+            });
+          }
+          // Set the user id so JWT callback uses the existing user
+          user.id = existingUser.id;
+        }
+      }
+
+      return true;
+    },
+    async jwt({ token, user, trigger }) {
       if (user) {
         token.id = user.id;
+      }
+      // Fetch displayName from database on sign in or when session is updated
+      if (token.id && (user || trigger === 'update')) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { displayName: true },
+        });
+        token.displayName = dbUser?.displayName;
       }
       return token;
     },
     async session({ session, token }) {
       if (session.user && token.id) {
         session.user.id = token.id as string;
+        session.user.displayName = token.displayName as string | null | undefined;
       }
       return session;
     },
   },
   pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error',
+    signIn: '/',
+    error: '/',
   },
 });

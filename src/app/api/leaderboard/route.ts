@@ -40,6 +40,15 @@ export async function GET(request: NextRequest) {
       });
       const results = await pipeline.exec();
 
+      if (!results) {
+        return NextResponse.json({
+          leaderboard: [],
+          total: 0,
+          offset: 0,
+          limit,
+        });
+      }
+
       // Process results - each user has 2 results (score, rank)
       const userScores = matchingUsers.map((user, i) => {
         const scoreResult = results[i * 2];

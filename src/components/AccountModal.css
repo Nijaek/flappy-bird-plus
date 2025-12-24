@@ -1,0 +1,127 @@
+/* Account Modal - Matches Auth Modal Style */
+
+.account-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.account-modal {
+  background: #DEB858;
+  border: 4px solid #8B6914;
+  padding: 24px;
+  max-width: 320px;
+  width: 90%;
+  box-shadow:
+    4px 4px 0 #543810,
+    -2px -2px 0 #F8E8A8 inset;
+  position: relative;
+}
+
+.account-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: #8B6914;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.account-close:hover {
+  color: #D85020;
+}
+
+.account-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  color: #FFFFFF;
+  text-align: center;
+  margin-bottom: 20px;
+  text-shadow:
+    2px 2px 0 #543810,
+    -1px -1px 0 #543810,
+    1px -1px 0 #543810,
+    -1px 1px 0 #543810;
+}
+
+.account-username {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 16px;
+  color: #FFFFFF;
+  text-align: center;
+  margin-bottom: 24px;
+  text-shadow:
+    2px 2px 0 #543810,
+    -1px -1px 0 #543810;
+}
+
+.account-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.account-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: rgba(248, 240, 216, 0.5);
+  border: 2px solid #8B6914;
+}
+
+.account-stat-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #543810;
+}
+
+.account-stat-value {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #543810;
+}
+
+.account-signout-btn {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  width: 100%;
+  padding: 12px 16px;
+  border: 3px solid #8B6914;
+  background: #F8F0D8;
+  color: #543810;
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.account-signout-btn:hover {
+  background: #FFF8E8;
+}
+
+.account-signout-btn:active {
+  transform: translateY(2px);
+}
+
+.account-loading {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #543810;
+  text-align: center;
+  padding: 40px;
+}

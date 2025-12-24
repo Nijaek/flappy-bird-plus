@@ -29,10 +29,11 @@ interface HomeScreenProps {
   isAuthenticated: boolean;
   userDisplayName: string | null;
   bestScore: number;
-  onAccountClick?: () => void;
+  onAccountClick: () => void;
+  onLeaderboardClick: () => void;
 }
 
-export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, bestScore, onAccountClick }: HomeScreenProps) {
+export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, bestScore, onAccountClick, onLeaderboardClick }: HomeScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
@@ -430,7 +431,7 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
 
     // Check if release is within score button bounds
     if (isScorePressed && isInBounds(x, y, bounds.score)) {
-      // TODO: Show leaderboard
+      onLeaderboardClick();
     }
 
     // Check if release is within shop button bounds
@@ -440,11 +441,7 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
 
     // Check if release is within account button bounds
     if (isAccountPressed && isInBounds(x, y, bounds.account)) {
-      if (isAuthenticated) {
-        signOut();
-      } else if (onAccountClick) {
-        onAccountClick();
-      }
+      onAccountClick();
     }
 
     // Check if release is within settings button bounds
@@ -457,7 +454,7 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
     setIsShopPressed(false);
     setIsAccountPressed(false);
     setIsSettingsPressed(false);
-  }, [isPlayPressed, isScorePressed, isShopPressed, isAccountPressed, isSettingsPressed, getButtonBounds, onStart]);
+  }, [isPlayPressed, isScorePressed, isShopPressed, isAccountPressed, isSettingsPressed, getButtonBounds, onStart, onAccountClick, onLeaderboardClick]);
 
   const handlePointerLeave = useCallback(() => {
     setIsPlayPressed(false);

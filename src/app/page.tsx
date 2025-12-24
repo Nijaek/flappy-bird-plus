@@ -7,6 +7,8 @@ import GetReadyScreen from '@/components/GetReadyScreen';
 import PlayingScreen from '@/components/PlayingScreen';
 import GameOverScreen from '@/components/GameOverScreen';
 import AuthModal from '@/components/AuthModal';
+import LeaderboardModal from '@/components/LeaderboardModal';
+import AccountModal from '@/components/AccountModal';
 import { useGameSession } from '@/hooks/useGameSession';
 
 type GameState = 'home' | 'getReady' | 'playing' | 'gameOver';
@@ -34,6 +36,8 @@ export default function Home() {
   } | null>(null);
 
   const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
+  const [showAccountModal, setShowAccountModal] = useState(false);
   const [needsUsername, setNeedsUsername] = useState(false);
   const [isInitialPrompt, setIsInitialPrompt] = useState(false);
   const hasShownInitialPrompt = useRef(false);
@@ -111,6 +115,18 @@ export default function Home() {
 
   const handleAccountClick = useCallback(() => {
     if (!isAuthenticated) {
+      setShowAuthModal(true);
+    }
+  }, [isAuthenticated]);
+
+  const handleLeaderboardClick = useCallback(() => {
+    setShowLeaderboardModal(true);
+  }, []);
+
+  const handleAccountClickNew = useCallback(() => {
+    if (isAuthenticated) {
+      setShowAccountModal(true);
+    } else {
       setShowAuthModal(true);
     }
   }, [isAuthenticated]);
@@ -221,7 +237,8 @@ export default function Home() {
           isAuthenticated={isAuthenticated}
           userDisplayName={session?.user?.displayName || null}
           bestScore={bestScore}
-          onAccountClick={handleAccountClick}
+          onAccountClick={handleAccountClickNew}
+          onLeaderboardClick={handleLeaderboardClick}
         />
       )}
       {gameState === 'getReady' && <GetReadyScreen onStart={handleStartPlaying} />}
@@ -244,6 +261,17 @@ export default function Home() {
           onComplete={handleAuthComplete}
           onClose={needsUsername || isInitialPrompt ? undefined : handleCloseModal}
           needsUsername={needsUsername}
+        />
+      )}
+      {showLeaderboardModal && (
+        <LeaderboardModal
+          onClose={() => setShowLeaderboardModal(false)}
+          isAuthenticated={isAuthenticated}
+        />
+      )}
+      {showAccountModal && (
+        <AccountModal
+          onClose={() => setShowAccountModal(false)}
         />
       )}
     </>

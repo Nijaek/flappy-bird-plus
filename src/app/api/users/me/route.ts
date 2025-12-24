@@ -40,7 +40,11 @@ export async function GET() {
       );
     }
 
-    return NextResponse.json({ user });
+    const gamesPlayed = await prisma.run.count({
+      where: { userId: session.user.id },
+    });
+
+    return NextResponse.json({ user: { ...user, gamesPlayed } });
   } catch (error) {
     console.error('Profile fetch error:', error);
     return NextResponse.json(

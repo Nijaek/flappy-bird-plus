@@ -515,12 +515,12 @@ function drawLeaderboardSection(
 
     // Highlight current player's row
     if (player.isPlayer) {
-      ctx.fillStyle = 'rgba(255, 215, 0, 0.3)';
+      ctx.fillStyle = 'rgba(84, 56, 16, 0.5)';
       ctx.fillRect(startX - 5, y - 2, rowWidth, rowHeight);
     }
 
     // Rank
-    ctx.fillStyle = player.isPlayer ? COLORS.medalGold : COLORS.textOutline;
+    ctx.fillStyle = player.isPlayer ? COLORS.textWhite : COLORS.textOutline;
     ctx.textAlign = 'left';
     ctx.fillText(`#${player.rank}`, startX, y);
 

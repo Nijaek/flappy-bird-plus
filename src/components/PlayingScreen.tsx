@@ -322,8 +322,10 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
       }
     }
 
-    // Update scroll offset (matches PIPE_SPEED)
-    scrollOffsetRef.current += PIPE_SPEED;
+    // Update scroll offset (matches PIPE_SPEED) - only when game is active
+    if (gameActiveRef.current) {
+      scrollOffsetRef.current += PIPE_SPEED;
+    }
     const groundOffset = scrollOffsetRef.current;
     const bushOffset = groundOffset;
     const cityOffset = groundOffset * 0.2;

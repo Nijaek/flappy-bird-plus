@@ -214,7 +214,7 @@ export default function AuthModal({ onComplete, onClose, needsUsername = false }
       setErrors({ form: 'Signup failed. Please try again.' });
       setIsLoading(false);
     }
-  }, [email, password, displayName, usernameStatus, onComplete]);
+  }, [email, password, confirmPassword, displayName, usernameStatus, onComplete]);
 
   const handleSetUsername = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();

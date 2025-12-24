@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
 import HomeScreen from '@/components/HomeScreen';
 import GetReadyScreen from '@/components/GetReadyScreen';
@@ -35,6 +35,8 @@ export default function Home() {
 
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [needsUsername, setNeedsUsername] = useState(false);
+  const [isInitialPrompt, setIsInitialPrompt] = useState(false);
+  const hasShownInitialPrompt = useRef(false);
 
   const {
     isAuthenticated,
@@ -50,6 +52,7 @@ export default function Home() {
 
     if (status === 'authenticated') {
       setShowAuthModal(false);
+      setIsInitialPrompt(false);
       if (sessionData?.user && !sessionData.user.name) {
         fetch('/api/users/me')
           .then(res => res.ok ? res.json() : null)
@@ -63,6 +66,18 @@ export default function Home() {
       }
     }
   }, [status, sessionData]);
+
+  // Show auth modal on first page load for non-authenticated users
+  useEffect(() => {
+    if (status === 'loading') return;
+    if (hasShownInitialPrompt.current) return;
+
+    if (status === 'unauthenticated') {
+      hasShownInitialPrompt.current = true;
+      setIsInitialPrompt(true);
+      setShowAuthModal(true);
+    }
+  }, [status]);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -82,6 +97,7 @@ export default function Home() {
   const handleAuthComplete = useCallback(() => {
     setShowAuthModal(false);
     setNeedsUsername(false);
+    setIsInitialPrompt(false);
   }, []);
 
   const handleCloseModal = useCallback(() => {
@@ -222,7 +238,7 @@ export default function Home() {
       {showAuthModal && (
         <AuthModal
           onComplete={handleAuthComplete}
-          onClose={needsUsername ? undefined : handleCloseModal}
+          onClose={needsUsername || isInitialPrompt ? undefined : handleCloseModal}
           needsUsername={needsUsername}
         />
       )}

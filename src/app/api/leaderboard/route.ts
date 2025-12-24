@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
     const search = searchParams.get('search')?.trim().toLowerCase();
 
     // If search is provided, query differently
-    if (search && search.length >= 2) {
+    if (search && search.length >= 2 && search.length <= 50) {
       // Find users matching the search
       const matchingUsers = await prisma.user.findMany({
         where: {
@@ -32,19 +32,27 @@ export async function GET(request: NextRequest) {
         });
       }
 
-      // Get scores for matching users from Redis
-      const userScores = await Promise.all(
-        matchingUsers.map(async (user) => {
-          const score = await redis.zscore(LEADERBOARD_KEY, user.id);
-          const rank = await redis.zrevrank(LEADERBOARD_KEY, user.id);
-          return {
-            userId: user.id,
-            displayName: user.displayName,
-            score: score ? parseInt(score) : null,
-            rank: rank !== null ? rank + 1 : null,
-          };
-        })
-      );
+      // Get scores for matching users from Redis using pipeline to batch operations
+      const pipeline = redis.pipeline();
+      matchingUsers.forEach(user => {
+        pipeline.zscore(LEADERBOARD_KEY, user.id);
+        pipeline.zrevrank(LEADERBOARD_KEY, user.id);
+      });
+      const results = await pipeline.exec();
+
+      // Process results - each user has 2 results (score, rank)
+      const userScores = matchingUsers.map((user, i) => {
+        const scoreResult = results[i * 2];
+        const rankResult = results[i * 2 + 1];
+        const score = scoreResult?.[1];
+        const rank = rankResult?.[1];
+        return {
+          userId: user.id,
+          displayName: user.displayName,
+          score: score !== null ? parseInt(String(score)) : null,
+          rank: rank !== null ? (rank as number) + 1 : null,
+        };
+      });
 
       // Filter out users with no score and sort by score descending
       const leaderboard = userScores

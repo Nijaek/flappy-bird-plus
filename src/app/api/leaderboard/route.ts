@@ -7,6 +7,62 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const offset = Math.max(0, parseInt(searchParams.get('offset') || '0'));
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') || '50')));
+    const search = searchParams.get('search')?.trim().toLowerCase();
+
+    // If search is provided, query differently
+    if (search && search.length >= 2) {
+      // Find users matching the search
+      const matchingUsers = await prisma.user.findMany({
+        where: {
+          displayName: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        },
+        select: { id: true, displayName: true },
+        take: 50,
+      });
+
+      if (matchingUsers.length === 0) {
+        return NextResponse.json({
+          leaderboard: [],
+          total: 0,
+          offset: 0,
+          limit,
+        });
+      }
+
+      // Get scores for matching users from Redis
+      const userScores = await Promise.all(
+        matchingUsers.map(async (user) => {
+          const score = await redis.zscore(LEADERBOARD_KEY, user.id);
+          const rank = await redis.zrevrank(LEADERBOARD_KEY, user.id);
+          return {
+            userId: user.id,
+            displayName: user.displayName,
+            score: score ? parseInt(score) : null,
+            rank: rank !== null ? rank + 1 : null,
+          };
+        })
+      );
+
+      // Filter out users with no score and sort by score descending
+      const leaderboard = userScores
+        .filter((u) => u.score !== null)
+        .sort((a, b) => (b.score || 0) - (a.score || 0))
+        .map((u) => ({
+          rank: u.rank,
+          displayName: u.displayName || 'Unknown',
+          bestScore: u.score,
+        }));
+
+      return NextResponse.json({
+        leaderboard,
+        total: leaderboard.length,
+        offset: 0,
+        limit,
+      });
+    }
 
     // For top 100, try cache first
     if (offset === 0 && limit <= 100) {

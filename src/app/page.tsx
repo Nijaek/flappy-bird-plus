@@ -46,6 +46,7 @@ export default function Home() {
   const [isInitialPrompt, setIsInitialPrompt] = useState(false);
   const [equippedSkin, setEquippedSkin] = useState<string>('skin_yellow');
   const [equippedTrail, setEquippedTrail] = useState<string | null>(null);
+  const [pointsBalance, setPointsBalance] = useState(0);
   const hasShownInitialPrompt = useRef(false);
 
   const {
@@ -98,6 +99,8 @@ export default function Home() {
           if (data?.user?.bestScore?.bestScore !== undefined) {
             setUserBest(data.user.bestScore.bestScore);
           }
+          // Set points balance
+          setPointsBalance(data?.user?.pointsBalance ?? 0);
           // After getting user data, fetch equipped cosmetic SKUs
           if (data?.user) {
             const equippedSkinId = data.user.equippedSkinId;
@@ -126,6 +129,7 @@ export default function Home() {
       setUserBest(null);
       setEquippedSkin('skin_yellow');
       setEquippedTrail(null);
+      setPointsBalance(0);
     }
   }, [isAuthenticated]);
 
@@ -266,6 +270,7 @@ export default function Home() {
           isAuthenticated={isAuthenticated}
           userDisplayName={session?.user?.displayName || null}
           bestScore={bestScore}
+          pointsBalance={pointsBalance}
           onAccountClick={handleAccountClick}
           onLeaderboardClick={handleLeaderboardClick}
           onSettingsClick={handleSettingsClick}

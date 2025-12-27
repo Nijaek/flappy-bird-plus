@@ -20,13 +20,14 @@ interface HomeScreenProps {
   isAuthenticated: boolean;
   userDisplayName: string | null;
   bestScore: number;
+  pointsBalance: number;
   onAccountClick: () => void;
   onLeaderboardClick: () => void;
   onSettingsClick: () => void;
   onShopClick: () => void;
 }
 
-export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, bestScore, onAccountClick, onLeaderboardClick, onSettingsClick, onShopClick }: HomeScreenProps) {
+export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, bestScore, pointsBalance, onAccountClick, onLeaderboardClick, onSettingsClick, onShopClick }: HomeScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
@@ -285,6 +286,16 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
     }
     ctx.fillStyle = COLORS.textWhite;
     ctx.fillText(scoreText, scoreX, currentY);
+    currentY += 20;
+
+    // Points balance
+    const pointsText = `★ ${pointsBalance}`;
+    ctx.fillStyle = COLORS.textOutline;
+    for (const [ox, oy] of [[-2, -2], [-2, 2], [2, -2], [2, 2], [-2, 0], [2, 0], [0, -2], [0, 2]]) {
+      ctx.fillText(pointsText, scoreX + ox, currentY + oy);
+    }
+    ctx.fillStyle = '#FFD700'; // Gold color for points
+    ctx.fillText(pointsText, scoreX, currentY);
 
     // Show hint for guests
     if (!isAuthenticated) {
@@ -292,10 +303,10 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
       const hintText = 'Sign in to save';
       ctx.fillStyle = COLORS.textOutline;
       for (const [ox, oy] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
-        ctx.fillText(hintText, scoreX + ox, currentY + 22 + oy);
+        ctx.fillText(hintText, scoreX + ox, currentY + 18 + oy);
       }
       ctx.fillStyle = '#FFD700'; // Gold hint
-      ctx.fillText(hintText, scoreX, currentY + 22);
+      ctx.fillText(hintText, scoreX, currentY + 18);
     }
 
     // =======================================================================
@@ -348,7 +359,7 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
     // Continue animation loop
     // eslint-disable-next-line react-hooks/immutability -- Intentional ref mutation for animation loop
     animationRef.current = requestAnimationFrame(render);
-  }, [isPlayPressed, isScorePressed, isShopPressed, isAccountPressed, isSettingsPressed, bestScore, isAuthenticated, userDisplayName, getScaleFactor]);
+  }, [isPlayPressed, isScorePressed, isShopPressed, isAccountPressed, isSettingsPressed, bestScore, pointsBalance, isAuthenticated, userDisplayName, getScaleFactor]);
 
   // Start animation loop
   useEffect(() => {

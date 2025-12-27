@@ -16,7 +16,7 @@
   background: #DEB858;
   border: 4px solid #8B6914;
   padding: 24px;
-  max-width: 320px;
+  max-width: 340px;
   width: 90%;
   box-shadow:
     4px 4px 0 #543810,
@@ -75,7 +75,7 @@
   align-items: center;
   gap: 8px;
   margin-bottom: 12px;
-  padding: 8px;
+  padding: 8px 16px 8px 12px;
   background: rgba(248, 240, 216, 0.5);
   border: 2px solid #8B6914;
 }
@@ -84,7 +84,7 @@
   font-family: 'Press Start 2P', monospace;
   font-size: 8px;
   color: #543810;
-  width: 60px;
+  width: 54px;
   flex-shrink: 0;
 }
 
@@ -156,9 +156,10 @@
   font-family: 'Press Start 2P', monospace;
   font-size: 8px;
   color: #543810;
-  width: 28px;
-  text-align: right;
+  width: 36px;
+  text-align: center;
   flex-shrink: 0;
+  padding-right: 8px;
 }
 
 .settings-placeholder {

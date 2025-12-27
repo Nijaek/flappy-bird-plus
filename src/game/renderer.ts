@@ -1,6 +1,6 @@
 // Flappy Bird Plus - Canvas Rendering Utilities
 
-import { COLORS, GAME, GROUND_PATTERN } from './constants';
+import { COLORS, GAME, GROUND_PATTERN, SKIN_PALETTES } from './constants';
 
 // =============================================================================
 // DRAWING UTILITIES
@@ -348,6 +348,8 @@ export function drawGround(
  * Draw the bird sprite - pixelated style matching original Flappy Bird
  * @param frame - 0: wings up, 1: wings mid, 2: wings down
  * @param rotation - rotation in radians
+ * @param skinSku - which skin to use (default: 'skin_yellow')
+ * @param animationTime - for rainbow animation
  */
 export function drawBird(
   ctx: CanvasRenderingContext2D,
@@ -355,12 +357,31 @@ export function drawBird(
   y: number,
   frame: number = 1,
   rotation: number = 0,
-  scale: number = 1
+  scale: number = 1,
+  skinSku: string = 'skin_yellow',
+  animationTime: number = 0
 ) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(rotation);
   ctx.scale(scale, scale);
+
+  // Determine colors based on skin
+  let bodyColor: string = COLORS.birdYellow;
+  let shadowColor: string = COLORS.birdDark;
+
+  const palette = SKIN_PALETTES[skinSku];
+  if (palette) {
+    if (palette.body === 'rainbow') {
+      // Rainbow cycles through hues
+      const hue = (animationTime * 0.1) % 360;
+      bodyColor = `hsl(${hue}, 80%, 60%)`;
+      shadowColor = `hsl(${hue}, 70%, 45%)`;
+    } else {
+      bodyColor = palette.body;
+      shadowColor = palette.shadow;
+    }
+  }
 
   // Bird dimensions (pixel art style)
   const w = 34;
@@ -402,17 +423,17 @@ export function drawBird(
   px(24, 0, 2, 2, '#000000');
 
   // === BODY FILL (yellow) ===
-  px(8, 2, 16, 4, COLORS.birdYellow);  // Top
-  px(4, 4, 4, 2, COLORS.birdYellow);
-  px(2, 6, 24, 6, COLORS.birdYellow);  // Upper body
-  px(2, 12, 24, 4, COLORS.birdYellow); // Mid body
-  px(4, 16, 20, 4, COLORS.birdYellow); // Lower body
-  px(6, 20, 18, 2, COLORS.birdYellow);
+  px(8, 2, 16, 4, bodyColor);  // Top
+  px(4, 4, 4, 2, bodyColor);
+  px(2, 6, 24, 6, bodyColor);  // Upper body
+  px(2, 12, 24, 4, bodyColor); // Mid body
+  px(4, 16, 20, 4, bodyColor); // Lower body
+  px(6, 20, 18, 2, bodyColor);
 
-  // === BODY SHADING (darker yellow) ===
-  px(4, 16, 20, 2, COLORS.birdDark);
-  px(6, 18, 16, 2, COLORS.birdDark);
-  px(8, 20, 14, 2, COLORS.birdDark);
+  // === BODY SHADING (darker) ===
+  px(4, 16, 20, 2, shadowColor);
+  px(6, 18, 16, 2, shadowColor);
+  px(8, 20, 14, 2, shadowColor);
 
   // === WING ===
   let wingY = 10;
@@ -429,9 +450,9 @@ export function drawBird(
   px(14, wingY + 2, 2, 4, '#000000');  // Right edge
 
   // Wing fill
-  px(2, wingY + 2, 12, 4, COLORS.birdDark);
+  px(2, wingY + 2, 12, 4, shadowColor);
   // Wing highlight
-  px(4, wingY + 2, 8, 2, COLORS.birdYellow);
+  px(4, wingY + 2, 8, 2, bodyColor);
 
   // === EYE (white circle with black pupil) ===
   // Eye outline (draw first, continuous with corners)

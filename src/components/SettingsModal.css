@@ -1,0 +1,172 @@
+/* Settings Modal - Matches Account Modal Style */
+
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.settings-modal {
+  background: #DEB858;
+  border: 4px solid #8B6914;
+  padding: 24px;
+  max-width: 320px;
+  width: 90%;
+  box-shadow:
+    4px 4px 0 #543810,
+    -2px -2px 0 #F8E8A8 inset;
+  position: relative;
+}
+
+.settings-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 12px;
+  color: #8B6914;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.settings-close:hover {
+  color: #D85020;
+}
+
+.settings-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 14px;
+  color: #FFFFFF;
+  text-align: center;
+  margin-bottom: 20px;
+  text-shadow:
+    2px 2px 0 #543810,
+    -1px -1px 0 #543810,
+    1px -1px 0 #543810,
+    -1px 1px 0 #543810;
+}
+
+.settings-section {
+  margin-bottom: 16px;
+}
+
+.settings-section-title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 10px;
+  color: #543810;
+  margin-bottom: 12px;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px;
+  background: rgba(248, 240, 216, 0.5);
+  border: 2px solid #8B6914;
+}
+
+.settings-label {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #543810;
+  width: 60px;
+  flex-shrink: 0;
+}
+
+.settings-mute-btn {
+  width: 28px;
+  height: 28px;
+  background: #F8F0D8;
+  border: 2px solid #8B6914;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+.settings-mute-btn:hover {
+  background: #FFF8E8;
+}
+
+.settings-mute-btn.muted {
+  background: #E0D0B0;
+}
+
+.settings-mute-btn svg {
+  width: 16px;
+  height: 16px;
+  fill: #F87820;
+}
+
+.settings-mute-btn.muted svg {
+  fill: #8B6914;
+}
+
+.settings-slider {
+  flex: 1;
+  height: 20px;
+  -webkit-appearance: none;
+  appearance: none;
+  background: #F8F0D8;
+  border: 2px solid #8B6914;
+  cursor: pointer;
+}
+
+.settings-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 16px;
+  height: 24px;
+  background: #F87820;
+  border: 2px solid #8B6914;
+  cursor: pointer;
+}
+
+.settings-slider::-moz-range-thumb {
+  width: 16px;
+  height: 24px;
+  background: #F87820;
+  border: 2px solid #8B6914;
+  cursor: pointer;
+}
+
+.settings-slider:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.settings-volume-value {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  color: #543810;
+  width: 28px;
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.settings-placeholder {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 6px;
+  color: #8B6914;
+  font-style: italic;
+  margin-left: 68px;
+  margin-top: -8px;
+  margin-bottom: 12px;
+}

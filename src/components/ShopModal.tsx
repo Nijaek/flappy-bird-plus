@@ -40,6 +40,8 @@ export default function ShopModal({ onClose, isAuthenticated }: ShopModalProps) 
       if (itemsRes.ok) {
         const data = await itemsRes.json();
         setItems(data.items);
+      } else {
+        setError('Failed to load shop items');
       }
 
       if (userRes?.ok) {
@@ -160,8 +162,8 @@ export default function ShopModal({ onClose, isAuthenticated }: ShopModalProps) 
 
   if (isLoading) {
     return (
-      <div className="shop-overlay">
-        <div className="shop-modal">
+      <div className="shop-overlay" onClick={onClose}>
+        <div className="shop-modal" onClick={e => e.stopPropagation()}>
           <div className="shop-loading">Loading...</div>
         </div>
       </div>
@@ -169,8 +171,8 @@ export default function ShopModal({ onClose, isAuthenticated }: ShopModalProps) 
   }
 
   return (
-    <div className="shop-overlay">
-      <div className="shop-modal">
+    <div className="shop-overlay" onClick={onClose}>
+      <div className="shop-modal" onClick={e => e.stopPropagation()}>
         <button className="shop-close" onClick={onClose} aria-label="Close">
           ✕
         </button>
@@ -180,14 +182,18 @@ export default function ShopModal({ onClose, isAuthenticated }: ShopModalProps) 
           <div className="shop-balance">★ {balance}</div>
         </div>
 
-        <div className="shop-tabs">
+        <div className="shop-tabs" role="tablist">
           <button
+            role="tab"
+            aria-selected={activeTab === 'skins'}
             className={`shop-tab ${activeTab === 'skins' ? 'active' : ''}`}
             onClick={() => { setActiveTab('skins'); setSelectedId(null); setError(null); }}
           >
             SKINS
           </button>
           <button
+            role="tab"
+            aria-selected={activeTab === 'trails'}
             className={`shop-tab ${activeTab === 'trails' ? 'active' : ''}`}
             onClick={() => { setActiveTab('trails'); setSelectedId(null); setError(null); }}
           >
@@ -202,8 +208,16 @@ export default function ShopModal({ onClose, isAuthenticated }: ShopModalProps) 
             {filteredItems.map(item => (
               <div
                 key={item.id}
+                role="button"
+                tabIndex={0}
                 className={`shop-item ${selectedId === item.id ? 'selected' : ''} ${item.equipped ? 'equipped' : ''}`}
                 onClick={() => handleItemClick(item)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    handleItemClick(item);
+                  }
+                }}
               >
                 <div className="shop-item-preview">
                   <ItemPreview item={item} />
@@ -296,11 +310,11 @@ function ItemPreview({ item }: { item: ShopItem }) {
       const colors = particleColors[item.sku] || ['#FFFFFF'];
 
       for (let i = 0; i < 12; i++) {
-        const x = 10 + Math.random() * 40;
-        const y = 10 + Math.random() * 40;
-        const size = 2 + Math.random() * 4;
+        const x = 10 + ((i * 17 + 5) % 40);
+        const y = 10 + ((i * 13 + 7) % 40);
+        const size = 2 + (i % 3) * 2;
         ctx.fillStyle = colors[i % colors.length];
-        ctx.globalAlpha = 0.5 + Math.random() * 0.5;
+        ctx.globalAlpha = 0.6 + (i % 4) * 0.1;
 
         if (item.sku === 'trail_stars') {
           // Draw star shape

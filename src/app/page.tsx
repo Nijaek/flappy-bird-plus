@@ -44,6 +44,8 @@ export default function Home() {
   const [showShopModal, setShowShopModal] = useState(false);
   const [needsUsername, setNeedsUsername] = useState(false);
   const [isInitialPrompt, setIsInitialPrompt] = useState(false);
+  const [equippedSkin, setEquippedSkin] = useState<string>('skin_yellow');
+  const [equippedTrail, setEquippedTrail] = useState<string | null>(null);
   const hasShownInitialPrompt = useRef(false);
 
   const {
@@ -96,11 +98,34 @@ export default function Home() {
           if (data?.user?.bestScore?.bestScore !== undefined) {
             setUserBest(data.user.bestScore.bestScore);
           }
+          // After getting user data, fetch equipped cosmetic SKUs
+          if (data?.user) {
+            const equippedSkinId = data.user.equippedSkinId;
+            const equippedTrailId = data.user.equippedTrailId;
+
+            if (equippedSkinId || equippedTrailId) {
+              fetch('/api/shop/items')
+                .then(r => r.json())
+                .then(shopData => {
+                  if (equippedSkinId) {
+                    const skin = shopData.items.find((i: { id: string }) => i.id === equippedSkinId);
+                    if (skin) setEquippedSkin(skin.sku);
+                  }
+                  if (equippedTrailId) {
+                    const trail = shopData.items.find((i: { id: string }) => i.id === equippedTrailId);
+                    if (trail) setEquippedTrail(trail.sku);
+                  }
+                })
+                .catch(() => {});
+            }
+          }
         })
         .catch(() => {});
     } else {
       // eslint-disable-next-line react-hooks/set-state-in-effect -- Clearing state when logged out
       setUserBest(null);
+      setEquippedSkin('skin_yellow');
+      setEquippedTrail(null);
     }
   }, [isAuthenticated]);
 
@@ -248,7 +273,13 @@ export default function Home() {
         />
       )}
       {gameState === 'getReady' && <GetReadyScreen onStart={handleStartPlaying} />}
-      {gameState === 'playing' && <PlayingScreen onGameOver={handleGameOver} />}
+      {gameState === 'playing' && (
+        <PlayingScreen
+          onGameOver={handleGameOver}
+          equippedSkin={equippedSkin}
+          equippedTrail={equippedTrail ?? undefined}
+        />
+      )}
       {gameState === 'gameOver' && (
         <GameOverScreen
           score={lastScore}

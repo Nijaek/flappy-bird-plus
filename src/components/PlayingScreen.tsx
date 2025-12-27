@@ -47,6 +47,7 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
+  const lastTimestampRef = useRef<number>(0);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
 
   // Bird state
@@ -61,22 +62,31 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
 
   // Pipe state
   const pipesRef = useRef<Pipe[]>([]);
-  const lastPipeSpawnRef = useRef(0);
+  const timeSinceLastPipeRef = useRef(0); // Time-based pipe spawning (ms)
   const pipeCountRef = useRef(0); // Total pipes spawned (for difficulty)
 
   // Parallax scroll offsets
   const scrollOffsetRef = useRef(0);
 
-  // Physics constants (slower, higher jump)
-  const GRAVITY = 0.1;
-  const FLAP_VELOCITY = -3.5;
-  const MAX_FALL_SPEED = 2.5;
-  const ROTATION_MULTIPLIER = 0.25;
+  // Target frame rate for physics normalization
+  const TARGET_FRAME_MS = 1000 / 60; // 16.67ms (60fps baseline)
+
+  // Speed multiplier for faster gameplay
+  const SPEED_MULTIPLIER = 2.75;
+  // To maintain same jump HEIGHT but faster: gravity scales by SPEED_MULTIPLIER,
+  // but flap velocity scales by sqrt(SPEED_MULTIPLIER) to preserve max height
+  const HEIGHT_FACTOR = Math.sqrt(SPEED_MULTIPLIER); // ≈ 1.58
+
+  // Physics constants (tuned for 60fps, will be scaled by delta time)
+  const GRAVITY = 0.115 * SPEED_MULTIPLIER;
+  const FLAP_VELOCITY = -3.95 * HEIGHT_FACTOR;
+  const MAX_FALL_SPEED = 2.35 * SPEED_MULTIPLIER;
+  const ROTATION_MULTIPLIER = 0.2;
 
   // Pipe constants
   const PIPE_WIDTH = Math.floor(GAME.PIPE_WIDTH * 0.8); // 20% narrower
-  const PIPE_SPEED = 1; // Slowed to match game speed
-  const PIPE_SPAWN_INTERVAL = 180; // Frames between pipe spawns
+  const PIPE_SPEED = 1 * SPEED_MULTIPLIER; // Pixels per frame at 60fps
+  const PIPE_SPAWN_INTERVAL_MS = 3000 / SPEED_MULTIPLIER; // Time between pipe spawns
   const BASE_GAP = 120; // Starting gap size
   const MIN_GAP = 70; // Minimum gap size at max difficulty
   const GAP_DECREASE_INTERVAL = 10; // Decrease gap every N points
@@ -211,10 +221,16 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
 
-    // Initialize start time
+    // Initialize start time and last timestamp
     if (!startTimeRef.current) {
       startTimeRef.current = timestamp;
+      lastTimestampRef.current = timestamp;
     }
+
+    // Calculate delta time for frame-rate independent physics
+    const deltaMs = timestamp - lastTimestampRef.current;
+    lastTimestampRef.current = timestamp;
+    const deltaMultiplier = deltaMs / TARGET_FRAME_MS;
 
     const elapsed = timestamp - startTimeRef.current;
 
@@ -231,18 +247,18 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
     // Calculate extended width for landscape mode
     const extraWidth = offsetX > 0 ? (offsetX / scale) + 50 : 50;
 
-    // Update physics
+    // Update physics (scaled by deltaMultiplier for frame-rate independence)
     if (gameActiveRef.current) {
-      // Apply gravity
-      birdVelocityRef.current += GRAVITY;
+      // Apply gravity (scaled by delta time)
+      birdVelocityRef.current += GRAVITY * deltaMultiplier;
 
       // Clamp fall speed
       if (birdVelocityRef.current > MAX_FALL_SPEED) {
         birdVelocityRef.current = MAX_FALL_SPEED;
       }
 
-      // Update position
-      birdYRef.current += birdVelocityRef.current;
+      // Update position (scaled by delta time)
+      birdYRef.current += birdVelocityRef.current * deltaMultiplier;
 
       // Ground collision
       const groundY = GAME.HEIGHT - GAME.GROUND_HEIGHT;
@@ -271,18 +287,18 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
         birdVelocityRef.current = 0;
       }
 
-      // Pipe spawning (spawn beyond visible area for landscape mode)
-      lastPipeSpawnRef.current++;
-      if (lastPipeSpawnRef.current >= PIPE_SPAWN_INTERVAL) {
+      // Pipe spawning (time-based for frame-rate independence)
+      timeSinceLastPipeRef.current += deltaMs;
+      if (timeSinceLastPipeRef.current >= PIPE_SPAWN_INTERVAL_MS) {
         spawnPipe(GAME.WIDTH + extraWidth);
-        lastPipeSpawnRef.current = 0;
+        timeSinceLastPipeRef.current = 0;
       }
 
       // Update pipes (move left and check scoring)
       const pipesToRemove: number[] = [];
       pipesRef.current.forEach((pipe, index) => {
-        // Move pipe left
-        pipe.x -= PIPE_SPEED;
+        // Move pipe left (scaled by delta time)
+        pipe.x -= PIPE_SPEED * deltaMultiplier;
 
         // Check if bird passed the pipe (for scoring)
         if (!pipe.passed && pipe.x + PIPE_WIDTH < GAME.BIRD_X) {
@@ -302,8 +318,8 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
         pipesRef.current.splice(pipesToRemove[i], 1);
       }
 
-      // Check pipe collision
-      if (checkCollision(GAME.BIRD_X, birdYRef.current)) {
+      // Check pipe collision (guard against double-call if ground collision already triggered)
+      if (gameActiveRef.current && checkCollision(GAME.BIRD_X, birdYRef.current)) {
         playHitSound();
         gameActiveRef.current = false;
         const durationMs = Math.round(timestamp - startTimeRef.current);
@@ -322,9 +338,9 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
       }
     }
 
-    // Update scroll offset (matches PIPE_SPEED) - only when game is active
+    // Update scroll offset (matches PIPE_SPEED, scaled by delta time) - only when game is active
     if (gameActiveRef.current) {
-      scrollOffsetRef.current += PIPE_SPEED;
+      scrollOffsetRef.current += PIPE_SPEED * deltaMultiplier;
     }
     const groundOffset = scrollOffsetRef.current;
     const bushOffset = groundOffset;

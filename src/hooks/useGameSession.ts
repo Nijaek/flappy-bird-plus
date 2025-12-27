@@ -92,8 +92,6 @@ export function useGameSession() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
-        console.error('Submit error:', data.error?.message);
         return null;
       }
 
@@ -103,8 +101,7 @@ export function useGameSession() {
       setState(prev => ({ ...prev, runToken: null }));
 
       return result;
-    } catch (err) {
-      console.error('Submit error:', err);
+    } catch {
       return null;
     }
   }, [isAuthenticated, state.runToken]);

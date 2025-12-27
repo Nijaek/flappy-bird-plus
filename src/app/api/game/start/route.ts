@@ -4,8 +4,8 @@ import { auth } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { redis } from '@/lib/redis';
 
-// Rate limit: 1 game start per 3 seconds per user
-const RATE_LIMIT_WINDOW = 3; // seconds
+// Rate limit: 1 game start per second per user
+const RATE_LIMIT_WINDOW = 1; // seconds
 
 export async function POST() {
   try {

@@ -6,7 +6,6 @@ import bcrypt from 'bcryptjs';
 import { prisma } from './prisma';
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  debug: true,
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
   providers: [
@@ -58,8 +57,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log('[auth] signIn callback:', { user, account: account?.provider, profile: profile?.email });
-
       // Allow OAuth sign-in even if an account with same email exists
       // This links the OAuth account to the existing user
       if (account?.provider === 'google' && profile?.email) {

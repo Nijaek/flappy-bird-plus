@@ -5,7 +5,8 @@ import { redis, LEADERBOARD_KEY } from '@/lib/redis';
 import crypto from 'crypto';
 
 // Anti-cheat constants
-const MIN_PIPE_INTERVAL_MS = 1500; // Minimum 1.5 seconds per pipe
+// Pipes spawn every 1.2 seconds (3s / 2.5x speed). Allow 0.8s minimum for buffer.
+const MIN_PIPE_INTERVAL_MS = 800; // Minimum 0.8 seconds per pipe
 const MAX_SCORE = 1000;
 const MAX_DURATION_MS = 30 * 60 * 1000; // 30 minutes
 const MIN_DURATION_MS = 1000; // 1 second minimum

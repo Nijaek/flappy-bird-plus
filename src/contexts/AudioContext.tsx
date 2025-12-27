@@ -32,11 +32,11 @@ interface AudioContextValue {
 }
 
 const defaultSettings: AudioSettings = {
-  masterVolume: 50,
+  masterVolume: 100,
   masterMuted: false,
-  sfxVolume: 50,
+  sfxVolume: 100,
   sfxMuted: false,
-  musicVolume: 50,
+  musicVolume: 100,
   musicMuted: false,
 };
 

@@ -43,7 +43,19 @@
       "Skill(superpowers:finishing-a-development-branch)",
       "Bash(git checkout:*)",
       "Bash(git pull:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(git branch:*)",
+      "Bash(git worktree remove:*)",
+      "Bash(node -e:*)",
+      "Bash(timeout 10 type:*)",
+      "Bash(exit 0)",
+      "Bash(ping:*)",
+      "Skill(superpowers:systematic-debugging)",
+      "Bash(dir:*)",
+      "Bash(git -C \"C:\\\\Users\\\\Admin\\\\Documents\\\\GitHub\\\\flappy-bird-plus\" status)",
+      "Bash(git -C \"C:\\\\Users\\\\Admin\\\\Documents\\\\GitHub\\\\flappy-bird-plus\" log --oneline -5)",
+      "Bash(git -C \"C:\\\\Users\\\\Admin\\\\Documents\\\\GitHub\\\\flappy-bird-plus\" add src/components/SettingsModal.tsx)",
+      "Bash(git -C \"C:\\\\Users\\\\Admin\\\\Documents\\\\GitHub\\\\flappy-bird-plus\" commit -m \"$\\(cat <<''EOF''\nfeat: add SettingsModal component\nEOF\n\\)\")"
     ]
   }
 }

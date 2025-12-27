@@ -10,6 +10,7 @@ import AuthModal from '@/components/AuthModal';
 import LeaderboardModal from '@/components/LeaderboardModal';
 import AccountModal from '@/components/AccountModal';
 import SettingsModal from '@/components/SettingsModal';
+import ShopModal from '@/components/ShopModal';
 import { useGameSession } from '@/hooks/useGameSession';
 
 type GameState = 'home' | 'getReady' | 'playing' | 'gameOver';
@@ -40,6 +41,7 @@ export default function Home() {
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [showShopModal, setShowShopModal] = useState(false);
   const [needsUsername, setNeedsUsername] = useState(false);
   const [isInitialPrompt, setIsInitialPrompt] = useState(false);
   const hasShownInitialPrompt = useRef(false);
@@ -127,6 +129,10 @@ export default function Home() {
 
   const handleSettingsClick = useCallback(() => {
     setShowSettingsModal(true);
+  }, []);
+
+  const handleShopClick = useCallback(() => {
+    setShowShopModal(true);
   }, []);
 
   const handleGoToGetReady = useCallback(async () => {
@@ -238,6 +244,7 @@ export default function Home() {
           onAccountClick={handleAccountClick}
           onLeaderboardClick={handleLeaderboardClick}
           onSettingsClick={handleSettingsClick}
+          onShopClick={handleShopClick}
         />
       )}
       {gameState === 'getReady' && <GetReadyScreen onStart={handleStartPlaying} />}
@@ -276,6 +283,12 @@ export default function Home() {
       {showSettingsModal && (
         <SettingsModal
           onClose={() => setShowSettingsModal(false)}
+        />
+      )}
+      {showShopModal && (
+        <ShopModal
+          onClose={() => setShowShopModal(false)}
+          isAuthenticated={isAuthenticated}
         />
       )}
     </>

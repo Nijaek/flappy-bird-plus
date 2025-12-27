@@ -23,9 +23,10 @@ interface HomeScreenProps {
   onAccountClick: () => void;
   onLeaderboardClick: () => void;
   onSettingsClick: () => void;
+  onShopClick: () => void;
 }
 
-export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, bestScore, onAccountClick, onLeaderboardClick, onSettingsClick }: HomeScreenProps) {
+export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, bestScore, onAccountClick, onLeaderboardClick, onSettingsClick, onShopClick }: HomeScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
@@ -430,7 +431,7 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
 
     // Check if release is within shop button bounds
     if (isShopPressed && isInBounds(x, y, bounds.shop)) {
-      // TODO: Show shop
+      onShopClick();
     }
 
     // Check if release is within account button bounds
@@ -448,7 +449,7 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
     setIsShopPressed(false);
     setIsAccountPressed(false);
     setIsSettingsPressed(false);
-  }, [isPlayPressed, isScorePressed, isShopPressed, isAccountPressed, isSettingsPressed, getButtonBounds, onStart, onAccountClick, onLeaderboardClick, onSettingsClick]);
+  }, [isPlayPressed, isScorePressed, isShopPressed, isAccountPressed, isSettingsPressed, getButtonBounds, onStart, onAccountClick, onLeaderboardClick, onSettingsClick, onShopClick]);
 
   const handlePointerLeave = useCallback(() => {
     setIsPlayPressed(false);

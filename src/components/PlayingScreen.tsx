@@ -12,9 +12,12 @@ import {
   drawPipe,
 } from '@/game/renderer';
 import { useAudio } from '@/contexts/AudioContext';
+import { TrailSystem } from '@/game/trails';
 
 interface PlayingScreenProps {
   onGameOver: (score: number, durationMs: number, frameData?: ImageData) => void;
+  equippedSkin?: string;
+  equippedTrail?: string;
 }
 
 // Pipe interface
@@ -25,7 +28,7 @@ interface Pipe {
   passed: boolean; // Whether the bird has passed this pipe for scoring
 }
 
-export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
+export default function PlayingScreen({ onGameOver, equippedSkin, equippedTrail }: PlayingScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
@@ -50,6 +53,10 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
 
   // Parallax scroll offsets
   const scrollOffsetRef = useRef(0);
+
+  // Trail system for cosmetics
+  const trailSystemRef = useRef(new TrailSystem());
+  const animationTimeRef = useRef(0);
 
   // Target frame rate for physics normalization
   const TARGET_FRAME_MS = 1000 / 60; // 16.67ms (60fps baseline)
@@ -96,6 +103,11 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, []);
+
+  // Initialize trail on mount/change
+  useEffect(() => {
+    trailSystemRef.current.setTrail(equippedTrail ?? null);
+  }, [equippedTrail]);
 
   // Flap function
   const flap = useCallback(() => {
@@ -419,21 +431,39 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
     // Calculate bird rotation based on velocity
     const birdRotation = Math.min(Math.max(birdVelocityRef.current * ROTATION_MULTIPLIER, -0.5), Math.PI / 2);
 
-    // Draw bird (offset for extended coordinate system)
-    drawBird(ctx, GAME.BIRD_X + extraWidth, birdYRef.current, birdFrameRef.current, birdRotation, 1);
+    // Update and draw trails before bird (so they appear behind)
+    trailSystemRef.current.update(GAME.BIRD_X + extraWidth, birdYRef.current, deltaMs);
+    animationTimeRef.current += deltaMs;
+    trailSystemRef.current.draw(ctx);
+
+    // Draw bird with skin (offset for extended coordinate system)
+    drawBird(
+      ctx,
+      GAME.BIRD_X + extraWidth,
+      birdYRef.current,
+      birdFrameRef.current,
+      birdRotation,
+      1,
+      equippedSkin ?? 'skin_yellow',
+      animationTimeRef.current
+    );
 
     ctx.restore();
 
     // Continue animation loop
     animationRef.current = requestAnimationFrame(render);
     // eslint-disable-next-line react-hooks/exhaustive-deps -- Constants don't need to be deps
-  }, [getScaleFactor, drawScore, onGameOver, spawnPipe, checkCollision, playSound]);
+  }, [getScaleFactor, drawScore, onGameOver, spawnPipe, checkCollision, playSound, equippedSkin]);
 
   // Start animation loop
   useEffect(() => {
     // Play initial flap sound and start with upward velocity
     playSound('wing');
     birdVelocityRef.current = FLAP_VELOCITY;
+
+    // Clear trails and reset animation time on game start
+    trailSystemRef.current.clear();
+    animationTimeRef.current = 0;
 
     animationRef.current = requestAnimationFrame(render);
 

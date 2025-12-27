@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { signIn } from 'next-auth/react';
 import { COLORS, GAME, ANIMATION } from '@/game/constants';
 import {
   drawSky,
@@ -14,15 +13,7 @@ import {
   drawButton,
   drawPlayIcon,
 } from '@/game/renderer';
-
-// Click sound for buttons
-const playClickSound = () => {
-  const audio = new Audio('/sounds/click_001.ogg');
-  audio.volume = 0.5;
-  audio.play().catch(() => {
-    // Ignore errors (e.g., if user hasn't interacted with page yet)
-  });
-};
+import { useAudio } from '@/contexts/AudioContext';
 
 interface HomeScreenProps {
   onStart: () => void;
@@ -31,9 +22,10 @@ interface HomeScreenProps {
   bestScore: number;
   onAccountClick: () => void;
   onLeaderboardClick: () => void;
+  onSettingsClick: () => void;
 }
 
-export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, bestScore, onAccountClick, onLeaderboardClick }: HomeScreenProps) {
+export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, bestScore, onAccountClick, onLeaderboardClick, onSettingsClick }: HomeScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
@@ -43,6 +35,7 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
   const [isAccountPressed, setIsAccountPressed] = useState(false);
   const [isSettingsPressed, setIsSettingsPressed] = useState(false);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const { playSound } = useAudio();
 
   // Bird animation frame
   const birdFrameRef = useRef(0);
@@ -371,14 +364,14 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
-        playClickSound();
+        playSound('click');
         onStart();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onStart]);
+  }, [onStart, playSound]);
 
   // Helper to check if point is within bounds
   const isInBounds = (x: number, y: number, bounds: { x: number; y: number; width: number; height: number }) => {
@@ -398,21 +391,21 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
 
     if (isInBounds(x, y, bounds.play)) {
       setIsPlayPressed(true);
-      playClickSound();
+      playSound('click');
     } else if (isInBounds(x, y, bounds.score)) {
       setIsScorePressed(true);
-      playClickSound();
+      playSound('click');
     } else if (isInBounds(x, y, bounds.shop)) {
       setIsShopPressed(true);
-      playClickSound();
+      playSound('click');
     } else if (isInBounds(x, y, bounds.account)) {
       setIsAccountPressed(true);
-      playClickSound();
+      playSound('click');
     } else if (isInBounds(x, y, bounds.settings)) {
       setIsSettingsPressed(true);
-      playClickSound();
+      playSound('click');
     }
-  }, [getButtonBounds]);
+  }, [getButtonBounds, playSound]);
 
   const handlePointerUp = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -446,7 +439,7 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
 
     // Check if release is within settings button bounds
     if (isSettingsPressed && isInBounds(x, y, bounds.settings)) {
-      // TODO: Show settings
+      onSettingsClick();
     }
 
     setIsPlayPressed(false);
@@ -454,7 +447,7 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
     setIsShopPressed(false);
     setIsAccountPressed(false);
     setIsSettingsPressed(false);
-  }, [isPlayPressed, isScorePressed, isShopPressed, isAccountPressed, isSettingsPressed, getButtonBounds, onStart, onAccountClick, onLeaderboardClick]);
+  }, [isPlayPressed, isScorePressed, isShopPressed, isAccountPressed, isSettingsPressed, getButtonBounds, onStart, onAccountClick, onLeaderboardClick, onSettingsClick]);
 
   const handlePointerLeave = useCallback(() => {
     setIsPlayPressed(false);

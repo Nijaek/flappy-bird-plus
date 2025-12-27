@@ -10,15 +10,7 @@ import {
   drawGround,
   drawBird,
 } from '@/game/renderer';
-
-// Wing sound for starting game
-const playWingSound = () => {
-  const audio = new Audio('/sounds/wing.ogg');
-  audio.volume = 0.5;
-  audio.play().catch(() => {
-    // Ignore errors
-  });
-};
+import { useAudio } from '@/contexts/AudioContext';
 
 interface GetReadyScreenProps {
   onStart: () => void;
@@ -29,6 +21,7 @@ export default function GetReadyScreen({ onStart }: GetReadyScreenProps) {
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const { playSound } = useAudio();
 
   // Bird animation frame
   const birdFrameRef = useRef(0);
@@ -64,14 +57,14 @@ export default function GetReadyScreen({ onStart }: GetReadyScreenProps) {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
-        playWingSound();
+        playSound('wing');
         onStart();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onStart]);
+  }, [onStart, playSound]);
 
   // Draw pixel art hand/click indicator (palm view with pointer finger up, flipped)
   const drawClickIndicator = useCallback((
@@ -325,9 +318,9 @@ export default function GetReadyScreen({ onStart }: GetReadyScreenProps) {
 
   // Handle click to start
   const handleClick = useCallback(() => {
-    playWingSound();
+    playSound('wing');
     onStart();
-  }, [onStart]);
+  }, [onStart, playSound]);
 
   return (
     <canvas

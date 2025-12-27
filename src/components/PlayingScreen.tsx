@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { GAME, ANIMATION } from '@/game/constants';
+import { GAME } from '@/game/constants';
 import {
   drawSky,
   drawCloud,
@@ -11,29 +11,11 @@ import {
   drawBird,
   drawPipe,
 } from '@/game/renderer';
+import { useAudio } from '@/contexts/AudioContext';
 
 interface PlayingScreenProps {
   onGameOver: (score: number, durationMs: number, frameData?: ImageData) => void;
 }
-
-// Sound effects
-const playWingSound = () => {
-  const audio = new Audio('/sounds/wing.ogg');
-  audio.volume = 0.5;
-  audio.play().catch(() => {});
-};
-
-const playPointSound = () => {
-  const audio = new Audio('/sounds/point.ogg');
-  audio.volume = 0.5;
-  audio.play().catch(() => {});
-};
-
-const playHitSound = () => {
-  const audio = new Audio('/sounds/hit.ogg');
-  audio.volume = 0.5;
-  audio.play().catch(() => {});
-};
 
 // Pipe interface
 interface Pipe {
@@ -49,6 +31,7 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
   const startTimeRef = useRef<number>(0);
   const lastTimestampRef = useRef<number>(0);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const { playSound } = useAudio();
 
   // Bird state
   const birdYRef = useRef(GAME.HEIGHT / 2 - 50);
@@ -78,8 +61,8 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
   const HEIGHT_FACTOR = Math.sqrt(SPEED_MULTIPLIER); // ≈ 1.58
 
   // Physics constants (tuned for 60fps, will be scaled by delta time)
-  const GRAVITY = 0.115 * SPEED_MULTIPLIER;
-  const FLAP_VELOCITY = -3.95 * HEIGHT_FACTOR;
+  const GRAVITY = 0.1175 * SPEED_MULTIPLIER;
+  const FLAP_VELOCITY = -3.85 * HEIGHT_FACTOR;
   const MAX_FALL_SPEED = 2.35 * SPEED_MULTIPLIER;
   const ROTATION_MULTIPLIER = 0.2;
 
@@ -120,8 +103,8 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
 
     birdVelocityRef.current = FLAP_VELOCITY;
     birdFrameRef.current = 0; // Wings up
-    playWingSound();
-  }, []);
+    playSound('wing');
+  }, [playSound]);
 
   // Handle input (click/tap/spacebar)
   useEffect(() => {
@@ -264,7 +247,7 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
       const groundY = GAME.HEIGHT - GAME.GROUND_HEIGHT;
       if (birdYRef.current > groundY - GAME.BIRD_HEIGHT / 2) {
         birdYRef.current = groundY - GAME.BIRD_HEIGHT / 2;
-        playHitSound();
+        playSound('hit');
         gameActiveRef.current = false;
         const durationMs = Math.round(timestamp - startTimeRef.current);
 
@@ -304,7 +287,7 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
         if (!pipe.passed && pipe.x + PIPE_WIDTH < GAME.BIRD_X) {
           pipe.passed = true;
           scoreRef.current++;
-          playPointSound();
+          playSound('point');
         }
 
         // Mark pipes that are off screen for removal (account for landscape)
@@ -320,7 +303,7 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
 
       // Check pipe collision (guard against double-call if ground collision already triggered)
       if (gameActiveRef.current && checkCollision(GAME.BIRD_X, birdYRef.current)) {
-        playHitSound();
+        playSound('hit');
         gameActiveRef.current = false;
         const durationMs = Math.round(timestamp - startTimeRef.current);
 
@@ -440,12 +423,12 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
 
     // Continue animation loop
     animationRef.current = requestAnimationFrame(render);
-  }, [getScaleFactor, drawScore, onGameOver, spawnPipe, checkCollision]);
+  }, [getScaleFactor, drawScore, onGameOver, spawnPipe, checkCollision, playSound]);
 
   // Start animation loop
   useEffect(() => {
     // Play initial flap sound and start with upward velocity
-    playWingSound();
+    playSound('wing');
     birdVelocityRef.current = FLAP_VELOCITY;
 
     animationRef.current = requestAnimationFrame(render);
@@ -455,7 +438,7 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [render]);
+  }, [render, playSound]);
 
   // Handle click to flap
   const handleClick = useCallback(() => {

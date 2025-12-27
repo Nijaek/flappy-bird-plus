@@ -3,13 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react';
 import { COLORS, GAME } from '@/game/constants';
 import { drawButton, drawPlayIcon } from '@/game/renderer';
-
-// Click sound for buttons
-const playClickSound = () => {
-  const audio = new Audio('/sounds/click_001.ogg');
-  audio.volume = 0.5;
-  audio.play().catch(() => {});
-};
+import { useAudio } from '@/contexts/AudioContext';
 
 interface NearbyPlayer {
   rank: number;
@@ -49,6 +43,7 @@ export default function GameOverScreen({
   const blurredBgRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const [canvasSize, setCanvasSize] = useState({ width: 0, height: 0 });
+  const { playSound } = useAudio();
 
   // Animation state
   const [panelY, setPanelY] = useState<number | null>(null);
@@ -258,15 +253,15 @@ export default function GameOverScreen({
 
     if (isInBounds(x, y, bounds.playAgain)) {
       setIsPlayAgainPressed(true);
-      playClickSound();
+      playSound('click');
     } else if (isInBounds(x, y, bounds.home)) {
       setIsHomePressed(true);
-      playClickSound();
+      playSound('click');
     } else if (isInBounds(x, y, bounds.signIn)) {
       setIsSignInPressed(true);
-      playClickSound();
+      playSound('click');
     }
-  }, [getButtonBounds]);
+  }, [getButtonBounds, playSound]);
 
   const handlePointerUp = useCallback((e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -302,14 +297,14 @@ export default function GameOverScreen({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.key === ' ') {
         e.preventDefault();
-        playClickSound();
+        playSound('click');
         onPlayAgain();
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [onPlayAgain]);
+  }, [onPlayAgain, playSound]);
 
   return (
     <>

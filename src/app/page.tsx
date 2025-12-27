@@ -9,6 +9,7 @@ import GameOverScreen from '@/components/GameOverScreen';
 import AuthModal from '@/components/AuthModal';
 import LeaderboardModal from '@/components/LeaderboardModal';
 import AccountModal from '@/components/AccountModal';
+import SettingsModal from '@/components/SettingsModal';
 import { useGameSession } from '@/hooks/useGameSession';
 
 type GameState = 'home' | 'getReady' | 'playing' | 'gameOver';
@@ -38,6 +39,7 @@ export default function Home() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [showAccountModal, setShowAccountModal] = useState(false);
+  const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [needsUsername, setNeedsUsername] = useState(false);
   const [isInitialPrompt, setIsInitialPrompt] = useState(false);
   const hasShownInitialPrompt = useRef(false);
@@ -119,6 +121,10 @@ export default function Home() {
       setShowAuthModal(true);
     }
   }, [isAuthenticated]);
+
+  const handleSettingsClick = useCallback(() => {
+    setShowSettingsModal(true);
+  }, []);
 
   const handleGoToGetReady = useCallback(async () => {
     setGameState('getReady');
@@ -228,6 +234,7 @@ export default function Home() {
           bestScore={bestScore}
           onAccountClick={handleAccountClick}
           onLeaderboardClick={handleLeaderboardClick}
+          onSettingsClick={handleSettingsClick}
         />
       )}
       {gameState === 'getReady' && <GetReadyScreen onStart={handleStartPlaying} />}
@@ -261,6 +268,11 @@ export default function Home() {
       {showAccountModal && (
         <AccountModal
           onClose={() => setShowAccountModal(false)}
+        />
+      )}
+      {showSettingsModal && (
+        <SettingsModal
+          onClose={() => setShowSettingsModal(false)}
         />
       )}
     </>

@@ -66,6 +66,14 @@ export const COLORS = {
   bushGreen: '#80C020',
 } as const;
 
+// Skin color palettes for bird customization
+export const SKIN_PALETTES: Record<string, { body: string; shadow: string }> = {
+  skin_yellow: { body: '#F8E848', shadow: '#e6c91d' },
+  skin_blue: { body: '#68C8D8', shadow: '#4898A8' },
+  skin_red: { body: '#E85858', shadow: '#B83838' },
+  skin_rainbow: { body: 'rainbow', shadow: 'rainbow' },
+};
+
 // =============================================================================
 // GAME DIMENSIONS
 // =============================================================================

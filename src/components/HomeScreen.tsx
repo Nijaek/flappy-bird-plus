@@ -345,6 +345,7 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
     ctx.restore();
 
     // Continue animation loop
+    // eslint-disable-next-line react-hooks/immutability -- Intentional ref mutation for animation loop
     animationRef.current = requestAnimationFrame(render);
   }, [isPlayPressed, isScorePressed, isShopPressed, isAccountPressed, isSettingsPressed, bestScore, isAuthenticated, userDisplayName, getScaleFactor]);
 

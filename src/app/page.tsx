@@ -57,6 +57,7 @@ export default function Home() {
     if (status === 'loading') return;
 
     if (status === 'authenticated') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setShowAuthModal(false);
       setIsInitialPrompt(false);
       // Always check if user needs to set displayName for Google OAuth users
@@ -79,6 +80,7 @@ export default function Home() {
 
     if (status === 'unauthenticated') {
       hasShownInitialPrompt.current = true;
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsInitialPrompt(true);
       setShowAuthModal(true);
     }
@@ -95,6 +97,7 @@ export default function Home() {
         })
         .catch(() => {});
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Clearing state when logged out
       setUserBest(null);
     }
   }, [isAuthenticated]);

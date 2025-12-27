@@ -54,6 +54,7 @@ export function AudioProvider({ children }: { children: ReactNode }) {
       const stored = localStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsed = JSON.parse(stored);
+        // eslint-disable-next-line react-hooks/set-state-in-effect -- Loading persisted state on mount
         setSettings({ ...defaultSettings, ...parsed });
       }
     } catch {

@@ -40,6 +40,7 @@ export default function AuthModal({ onComplete, onClose, needsUsername = false }
   useEffect(() => {
     if (modalState !== 'CREATE_ACCOUNT' && modalState !== 'CHOOSE_USERNAME') return;
     if (!displayName || displayName.length < 3) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUsernameStatus('idle');
       setUsernameError(null);
       return;
@@ -75,7 +76,7 @@ export default function AuthModal({ onComplete, onClose, needsUsername = false }
     };
   }, [displayName, modalState]);
 
-  const validateSignIn = (): boolean => {
+  const validateSignIn = useCallback((): boolean => {
     const newErrors: FormErrors = {};
     if (!email) {
       newErrors.email = 'Email is required';
@@ -87,9 +88,9 @@ export default function AuthModal({ onComplete, onClose, needsUsername = false }
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [email, password]);
 
-  const validateCreateAccount = (): boolean => {
+  const validateCreateAccount = useCallback((): boolean => {
     const newErrors: FormErrors = {};
     if (!displayName) {
       newErrors.displayName = 'Username is required';
@@ -121,9 +122,9 @@ export default function AuthModal({ onComplete, onClose, needsUsername = false }
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
+  }, [displayName, usernameStatus, usernameError, email, password, confirmPassword]);
 
-  const validateUsername = (): boolean => {
+  const validateUsername = useCallback((): boolean => {
     const newErrors: FormErrors = {};
     if (!displayName) {
       newErrors.displayName = 'Username is required';
@@ -138,7 +139,7 @@ export default function AuthModal({ onComplete, onClose, needsUsername = false }
     }
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0 && usernameStatus === 'available';
-  };
+  }, [displayName, usernameStatus, usernameError]);
 
   const handleGoogleSignIn = useCallback(async () => {
     setIsLoading(true);
@@ -174,7 +175,7 @@ export default function AuthModal({ onComplete, onClose, needsUsername = false }
       setErrors({ form: 'Sign in failed. Please try again.' });
       setIsLoading(false);
     }
-  }, [email, password, onComplete]);
+  }, [email, password, onComplete, validateSignIn]);
 
   const handleCreateAccount = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,7 +215,7 @@ export default function AuthModal({ onComplete, onClose, needsUsername = false }
       setErrors({ form: 'Signup failed. Please try again.' });
       setIsLoading(false);
     }
-  }, [email, password, confirmPassword, displayName, usernameStatus, onComplete]);
+  }, [email, password, displayName, usernameStatus, onComplete, validateCreateAccount]);
 
   const handleSetUsername = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -240,7 +241,7 @@ export default function AuthModal({ onComplete, onClose, needsUsername = false }
       setErrors({ form: 'Failed to set username. Please try again.' });
       setIsLoading(false);
     }
-  }, [displayName, onComplete]);
+  }, [displayName, onComplete, validateUsername]);
 
   const handleGuestPlay = useCallback(() => {
     onComplete();

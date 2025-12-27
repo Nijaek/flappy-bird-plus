@@ -26,7 +26,7 @@ export default function LeaderboardModal({ onClose, isAuthenticated }: Leaderboa
   const [isLoading, setIsLoading] = useState(true);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [total, setTotal] = useState(0);
+  const [, setTotal] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);

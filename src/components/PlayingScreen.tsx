@@ -104,6 +104,7 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
     birdVelocityRef.current = FLAP_VELOCITY;
     birdFrameRef.current = 0; // Wings up
     playSound('wing');
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- FLAP_VELOCITY is a constant
   }, [playSound]);
 
   // Handle input (click/tap/spacebar)
@@ -194,6 +195,7 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
       }
     }
     return false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- PIPE_WIDTH is a constant
   }, []);
 
   // Main render loop
@@ -215,7 +217,8 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
     lastTimestampRef.current = timestamp;
     const deltaMultiplier = deltaMs / TARGET_FRAME_MS;
 
-    const elapsed = timestamp - startTimeRef.current;
+    // Timestamp from start (for future use)
+    void (timestamp - startTimeRef.current);
 
     // Disable image smoothing
     ctx.imageSmoothingEnabled = false;
@@ -423,6 +426,7 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
 
     // Continue animation loop
     animationRef.current = requestAnimationFrame(render);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Constants don't need to be deps
   }, [getScaleFactor, drawScore, onGameOver, spawnPipe, checkCollision, playSound]);
 
   // Start animation loop
@@ -438,6 +442,7 @@ export default function PlayingScreen({ onGameOver }: PlayingScreenProps) {
         cancelAnimationFrame(animationRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- FLAP_VELOCITY is a constant
   }, [render, playSound]);
 
   // Handle click to flap

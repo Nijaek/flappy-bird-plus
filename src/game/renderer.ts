@@ -489,7 +489,6 @@ export function drawTitle(
 
   // Draw "Flappy" on first line
   const flappyText = 'Flappy';
-  const birdPlusText = 'Bird +';
 
   // Calculate positions for two-line layout
   const lineSpacing = 48;

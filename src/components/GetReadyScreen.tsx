@@ -302,6 +302,7 @@ export default function GetReadyScreen({ onStart }: GetReadyScreenProps) {
     ctx.restore();
 
     // Continue animation loop
+    // eslint-disable-next-line react-hooks/immutability -- Intentional ref mutation for animation loop
     animationRef.current = requestAnimationFrame(render);
   }, [getScaleFactor, drawScore, drawClickIndicator, drawTapText]);
 

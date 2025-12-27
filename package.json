@@ -9,7 +9,8 @@
     "start": "next start",
     "lint": "eslint",
     "sync-leaderboard": "npx tsx scripts/sync-leaderboard.ts",
-    "cleanup-tokens": "npx tsx scripts/cleanup-tokens.ts"
+    "cleanup-tokens": "npx tsx scripts/cleanup-tokens.ts",
+    "seed:items": "npx tsx prisma/seed-items.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.1",

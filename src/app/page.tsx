@@ -270,7 +270,7 @@ export default function Home() {
         href="https://nijae.dev"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed top-4 left-4 z-50 transition-opacity hover:opacity-80"
+        className="fixed top-4 left-4 z-50 transition-transform duration-150 hover:scale-110"
       >
         <img
           src="/logo_transparent_bg.png"

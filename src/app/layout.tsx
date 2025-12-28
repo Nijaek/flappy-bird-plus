@@ -3,7 +3,7 @@ import "./globals.css";
 import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
-  title: "Flappy Bird Plus",
+  title: "nijae.dev | Flappy Bird Plus",
   description: "A Flappy Bird clone with accounts, leaderboard, and shop",
   icons: {
     icon: "/logo_transparent_bg.png",

@@ -270,13 +270,12 @@ export default function Home() {
         href="https://nijae.dev"
         target="_blank"
         rel="noopener noreferrer"
-        className="fixed top-4 left-4 z-50 transition-transform hover:scale-110"
+        className="fixed top-4 left-4 z-50 transition-opacity hover:opacity-80"
       >
         <img
           src="/logo_transparent_bg.png"
           alt="nijae.dev"
-          className="w-12 h-12 drop-shadow-lg"
-          style={{ imageRendering: 'pixelated' }}
+          className="w-10 h-10"
         />
       </a>
       {gameState === 'home' && (

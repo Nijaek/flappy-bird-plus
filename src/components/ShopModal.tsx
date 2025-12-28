@@ -2,11 +2,14 @@
 'use client';
 
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { drawBird } from '@/game/renderer';
 import './ShopModal.css';
 
 interface ShopModalProps {
   onClose: () => void;
   isAuthenticated: boolean;
+  onBalanceChange?: (newBalance: number) => void;
+  onEquipChange?: (type: 'skin' | 'trail', sku: string | null) => void;
 }
 
 interface ShopItem {
@@ -21,7 +24,7 @@ interface ShopItem {
 
 type TabType = 'skins' | 'trails';
 
-export default function ShopModal({ onClose, isAuthenticated }: ShopModalProps) {
+export default function ShopModal({ onClose, isAuthenticated, onBalanceChange, onEquipChange }: ShopModalProps) {
   const [items, setItems] = useState<ShopItem[]>([]);
   const [balance, setBalance] = useState(0);
   const [activeTab, setActiveTab] = useState<TabType>('skins');
@@ -90,6 +93,7 @@ export default function ShopModal({ onClose, isAuthenticated }: ShopModalProps) 
               body: JSON.stringify({ itemId: null, type: 'trail' }),
             });
             if (res.ok) {
+              onEquipChange?.('trail', null);
               await fetchData();
             }
           } catch (err) {
@@ -107,6 +111,7 @@ export default function ShopModal({ onClose, isAuthenticated }: ShopModalProps) 
           body: JSON.stringify({ itemId: item.id, type: item.type }),
         });
         if (res.ok) {
+          onEquipChange?.(item.type, item.sku);
           await fetchData();
         }
       } catch (err) {
@@ -134,6 +139,7 @@ export default function ShopModal({ onClose, isAuthenticated }: ShopModalProps) 
         if (res.ok) {
           const data = await res.json();
           setBalance(data.newBalance);
+          onBalanceChange?.(data.newBalance);
           await fetchData();
           setSelectedId(null);
         } else {
@@ -241,6 +247,7 @@ export default function ShopModal({ onClose, isAuthenticated }: ShopModalProps) 
 // Preview component for items
 function ItemPreview({ item }: { item: ShopItem }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationRef = useRef<number>(0);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -250,53 +257,26 @@ function ItemPreview({ item }: { item: ShopItem }) {
     if (!ctx) return;
 
     ctx.imageSmoothingEnabled = false;
+
+    // For rainbow skin, animate the color cycling
+    if (item.type === 'skin' && item.sku === 'skin_rainbow') {
+      let startTime = performance.now();
+      const animate = () => {
+        ctx.clearRect(0, 0, 60, 60);
+        const elapsed = performance.now() - startTime;
+        drawBird(ctx, 30, 30, 1, 0, 1.5, item.sku, elapsed);
+        animationRef.current = requestAnimationFrame(animate);
+      };
+      animate();
+      return () => cancelAnimationFrame(animationRef.current);
+    }
+
+    // Static render for other items
     ctx.clearRect(0, 0, 60, 60);
 
     if (item.type === 'skin') {
-      // Draw a simple colored circle for skin preview
-      const colors: Record<string, string> = {
-        skin_yellow: '#F8E848',
-        skin_blue: '#68C8D8',
-        skin_red: '#E85858',
-        skin_rainbow: 'rainbow',
-      };
-
-      const color = colors[item.sku] || '#F8E848';
-
-      if (color === 'rainbow') {
-        // Draw rainbow gradient
-        const gradient = ctx.createLinearGradient(15, 15, 45, 45);
-        gradient.addColorStop(0, '#FF0000');
-        gradient.addColorStop(0.2, '#FF7F00');
-        gradient.addColorStop(0.4, '#FFFF00');
-        gradient.addColorStop(0.6, '#00FF00');
-        gradient.addColorStop(0.8, '#0000FF');
-        gradient.addColorStop(1, '#9400D3');
-        ctx.fillStyle = gradient;
-      } else {
-        ctx.fillStyle = color;
-      }
-
-      // Draw bird body shape (simplified)
-      ctx.beginPath();
-      ctx.ellipse(30, 30, 15, 12, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Eye
-      ctx.fillStyle = '#FFFFFF';
-      ctx.beginPath();
-      ctx.arc(36, 26, 6, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.fillStyle = '#000000';
-      ctx.beginPath();
-      ctx.arc(38, 26, 3, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Beak
-      ctx.fillStyle = '#F88028';
-      ctx.fillRect(42, 28, 8, 4);
-      ctx.fillStyle = '#D85020';
-      ctx.fillRect(42, 32, 8, 4);
+      // Use the actual drawBird function for pixel-perfect preview
+      drawBird(ctx, 30, 30, 1, 0, 1.5, item.sku, 0);
     } else {
       // Trail preview - draw particles
       const particleColors: Record<string, string[]> = {

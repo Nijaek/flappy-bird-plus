@@ -10,13 +10,16 @@ import {
   drawGround,
   drawBird,
 } from '@/game/renderer';
+import { TrailSystem } from '@/game/trails';
 import { useAudio } from '@/contexts/AudioContext';
 
 interface GetReadyScreenProps {
   onStart: () => void;
+  equippedSkin?: string;
+  equippedTrail?: string | null;
 }
 
-export default function GetReadyScreen({ onStart }: GetReadyScreenProps) {
+export default function GetReadyScreen({ onStart, equippedSkin = 'skin_yellow', equippedTrail = null }: GetReadyScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
@@ -26,9 +29,13 @@ export default function GetReadyScreen({ onStart }: GetReadyScreenProps) {
   // Bird animation frame
   const birdFrameRef = useRef(0);
   const lastBirdFrameTime = useRef(0);
+  const lastFrameTimeRef = useRef(0);
 
   // Parallax scroll offsets
   const scrollOffsetRef = useRef(0);
+
+  // Trail system
+  const trailSystemRef = useRef(new TrailSystem());
 
   // Calculate scale factor to fit game on screen (contain mode)
   const getScaleFactor = useCallback(() => {
@@ -51,6 +58,11 @@ export default function GetReadyScreen({ onStart }: GetReadyScreenProps) {
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, []);
+
+  // Initialize trail on mount/change
+  useEffect(() => {
+    trailSystemRef.current.setTrail(equippedTrail ?? null);
+  }, [equippedTrail]);
 
   // Handle keyboard input (spacebar to start)
   useEffect(() => {
@@ -287,7 +299,13 @@ export default function GetReadyScreen({ onStart }: GetReadyScreenProps) {
     const birdY = GAME.HEIGHT / 2 - 50 + Math.sin(elapsed * ANIMATION.BIRD_HOVER_SPEED) * ANIMATION.BIRD_HOVER_AMPLITUDE;
     const birdRotation = Math.sin(elapsed * ANIMATION.BIRD_HOVER_SPEED) * 0.1;
 
-    drawBird(ctx, birdX, birdY, birdFrameRef.current, birdRotation, 1);
+    // Update and draw trail before bird
+    const deltaMs = lastFrameTimeRef.current ? timestamp - lastFrameTimeRef.current : 16;
+    lastFrameTimeRef.current = timestamp;
+    trailSystemRef.current.update(birdX, birdY, deltaMs, scrollOffsetRef.current);
+    trailSystemRef.current.draw(ctx, scrollOffsetRef.current);
+
+    drawBird(ctx, birdX, birdY, birdFrameRef.current, birdRotation, 1, equippedSkin, elapsed);
 
     // Draw click indicator below and to the right of bird
     const indicatorX = GAME.WIDTH / 2;
@@ -304,7 +322,7 @@ export default function GetReadyScreen({ onStart }: GetReadyScreenProps) {
     // Continue animation loop
     // eslint-disable-next-line react-hooks/immutability -- Intentional ref mutation for animation loop
     animationRef.current = requestAnimationFrame(render);
-  }, [getScaleFactor, drawScore, drawClickIndicator, drawTapText]);
+  }, [getScaleFactor, drawScore, drawClickIndicator, drawTapText, equippedSkin, equippedTrail]);
 
   // Start animation loop
   useEffect(() => {

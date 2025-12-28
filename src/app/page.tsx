@@ -192,6 +192,7 @@ export default function Home() {
       const result = await submitScore(score, durationMs);
       if (result) {
         setUserBest(result.you.bestScore);
+        setPointsBalance(result.pointsBalance);
         userRank = result.you.rank;
         setLastSubmitResult({
           isNewBest: result.you.isNewBest,
@@ -275,9 +276,11 @@ export default function Home() {
           onLeaderboardClick={handleLeaderboardClick}
           onSettingsClick={handleSettingsClick}
           onShopClick={handleShopClick}
+          equippedSkin={equippedSkin}
+          equippedTrail={equippedTrail}
         />
       )}
-      {gameState === 'getReady' && <GetReadyScreen onStart={handleStartPlaying} />}
+      {gameState === 'getReady' && <GetReadyScreen onStart={handleStartPlaying} equippedSkin={equippedSkin} equippedTrail={equippedTrail} />}
       {gameState === 'playing' && (
         <PlayingScreen
           onGameOver={handleGameOver}
@@ -325,6 +328,14 @@ export default function Home() {
         <ShopModal
           onClose={() => setShowShopModal(false)}
           isAuthenticated={isAuthenticated}
+          onBalanceChange={setPointsBalance}
+          onEquipChange={(type, sku) => {
+            if (type === 'skin') {
+              setEquippedSkin(sku ?? 'skin_yellow');
+            } else {
+              setEquippedTrail(sku);
+            }
+          }}
         />
       )}
     </>

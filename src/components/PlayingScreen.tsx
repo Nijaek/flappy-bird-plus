@@ -432,9 +432,9 @@ export default function PlayingScreen({ onGameOver, equippedSkin, equippedTrail 
     const birdRotation = Math.min(Math.max(birdVelocityRef.current * ROTATION_MULTIPLIER, -0.5), Math.PI / 2);
 
     // Update and draw trails before bird (so they appear behind)
-    trailSystemRef.current.update(GAME.BIRD_X + extraWidth, birdYRef.current, deltaMs);
+    trailSystemRef.current.update(GAME.BIRD_X + extraWidth, birdYRef.current, deltaMs, scrollOffsetRef.current);
     animationTimeRef.current += deltaMs;
-    trailSystemRef.current.draw(ctx);
+    trailSystemRef.current.draw(ctx, scrollOffsetRef.current);
 
     // Draw bird with skin (offset for extended coordinate system)
     drawBird(

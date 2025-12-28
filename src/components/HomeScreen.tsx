@@ -13,6 +13,7 @@ import {
   drawButton,
   drawPlayIcon,
 } from '@/game/renderer';
+import { TrailSystem } from '@/game/trails';
 import { useAudio } from '@/contexts/AudioContext';
 
 interface HomeScreenProps {
@@ -25,9 +26,11 @@ interface HomeScreenProps {
   onLeaderboardClick: () => void;
   onSettingsClick: () => void;
   onShopClick: () => void;
+  equippedSkin?: string;
+  equippedTrail?: string | null;
 }
 
-export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, bestScore, pointsBalance, onAccountClick, onLeaderboardClick, onSettingsClick, onShopClick }: HomeScreenProps) {
+export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, bestScore, pointsBalance, onAccountClick, onLeaderboardClick, onSettingsClick, onShopClick, equippedSkin = 'skin_yellow', equippedTrail = null }: HomeScreenProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const animationRef = useRef<number>(0);
   const startTimeRef = useRef<number>(0);
@@ -42,9 +45,13 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
   // Bird animation frame
   const birdFrameRef = useRef(0);
   const lastBirdFrameTime = useRef(0);
+  const lastFrameTimeRef = useRef(0);
 
   // Parallax scroll offsets (different speeds for depth)
   const scrollOffsetRef = useRef(0);
+
+  // Trail system
+  const trailSystemRef = useRef(new TrailSystem());
 
   // Calculate scale factor to fit game on screen (contain mode)
   const getScaleFactor = useCallback(() => {
@@ -127,6 +134,11 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
     window.addEventListener('resize', updateSize);
     return () => window.removeEventListener('resize', updateSize);
   }, []);
+
+  // Initialize trail on mount/change
+  useEffect(() => {
+    trailSystemRef.current.setTrail(equippedTrail ?? null);
+  }, [equippedTrail]);
 
   // Main render loop
   const render = useCallback((timestamp: number) => {
@@ -233,12 +245,19 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
     }
 
     // Bird position with hover animation
+    const birdX = GAME.WIDTH / 2;
     const birdY = 210 + Math.sin(elapsed * ANIMATION.BIRD_HOVER_SPEED) * ANIMATION.BIRD_HOVER_AMPLITUDE;
 
     // Slight rotation based on hover position
     const birdRotation = Math.sin(elapsed * ANIMATION.BIRD_HOVER_SPEED) * 0.15;
 
-    drawBird(ctx, GAME.WIDTH / 2, birdY, birdFrameRef.current, birdRotation, 1.2);
+    // Update and draw trail before bird
+    const deltaMs = lastFrameTimeRef.current ? timestamp - lastFrameTimeRef.current : 16;
+    lastFrameTimeRef.current = timestamp;
+    trailSystemRef.current.update(birdX, birdY, deltaMs, scrollOffsetRef.current);
+    trailSystemRef.current.draw(ctx, scrollOffsetRef.current);
+
+    drawBird(ctx, birdX, birdY, birdFrameRef.current, birdRotation, 1.2, equippedSkin, elapsed);
 
     // =======================================================================
     // DRAW BUTTONS (Play and Leaderboard like in reference)
@@ -250,63 +269,70 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
     const buttonsY = GAME.HEIGHT - GAME.GROUND_HEIGHT - 80;
 
     // =======================================================================
-    // DRAW USER INFO & BEST SCORE (top right with floating animation)
+    // DRAW USER INFO (single line, centered: username | pts | Best: X)
     // =======================================================================
     const scoreFloat = Math.sin(elapsed * 0.003) * 3;
-    ctx.font = 'bold 14px "Press Start 2P", monospace';
-    ctx.textAlign = 'right';
+    ctx.font = 'bold 8px "Press Start 2P", monospace';
     ctx.textBaseline = 'top';
 
-    const scoreX = GAME.WIDTH - 10;
-    let currentY = 14 + scoreFloat;
+    const statsY = 10 + scoreFloat;
+    const centerX = GAME.WIDTH / 2;
 
-    // Show username if logged in
     if (isAuthenticated && userDisplayName) {
-      const displayName = userDisplayName.length > 12
-        ? userDisplayName.slice(0, 10) + '..'
+      // Authenticated: username | pts | Best: X
+      const displayName = userDisplayName.length > 8
+        ? userDisplayName.slice(0, 6) + '..'
         : userDisplayName;
+      const ptsText = `${pointsBalance}`;
+      const bestText = `${bestScore}`;
 
-      ctx.font = 'bold 10px "Press Start 2P", monospace';
+      // Build segments: [text, color][]
+      const segments: [string, string][] = [
+        [displayName, '#90EE90'],
+        [' | ', COLORS.textWhite],
+        [ptsText, '#FFD700'],
+        [' pts | Best: ', COLORS.textWhite],
+        [bestText, COLORS.textWhite],
+      ];
+
+      // Calculate full width to center
+      const fullText = segments.map(s => s[0]).join('');
+      const totalWidth = ctx.measureText(fullText).width;
+      const startX = centerX - totalWidth / 2;
+
+      // Draw outline for full text first
       ctx.fillStyle = COLORS.textOutline;
       for (const [ox, oy] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
-        ctx.fillText(displayName, scoreX + ox, currentY + oy);
+        ctx.fillText(fullText, startX + ox, statsY + oy);
       }
-      ctx.fillStyle = '#90EE90'; // Light green for logged in
-      ctx.fillText(displayName, scoreX, currentY);
-      currentY += 16;
-    }
 
-    // Best score
-    ctx.font = 'bold 14px "Press Start 2P", monospace';
-    const scoreText = `Best: ${bestScore}`;
+      // Draw each segment with its color
+      let xPos = startX;
+      for (const [text, color] of segments) {
+        ctx.fillStyle = color;
+        ctx.fillText(text, xPos, statsY);
+        xPos += ctx.measureText(text).width;
+      }
+    } else {
+      // Guest: Best: X + hint (centered)
+      ctx.textAlign = 'center';
+      const bestText = `Best: ${bestScore}`;
+      ctx.fillStyle = COLORS.textOutline;
+      for (const [ox, oy] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
+        ctx.fillText(bestText, centerX + ox, statsY + oy);
+      }
+      ctx.fillStyle = COLORS.textWhite;
+      ctx.fillText(bestText, centerX, statsY);
 
-    ctx.fillStyle = COLORS.textOutline;
-    for (const [ox, oy] of [[-2, -2], [-2, 2], [2, -2], [2, 2], [-2, 0], [2, 0], [0, -2], [0, 2]]) {
-      ctx.fillText(scoreText, scoreX + ox, currentY + oy);
-    }
-    ctx.fillStyle = COLORS.textWhite;
-    ctx.fillText(scoreText, scoreX, currentY);
-    currentY += 20;
-
-    // Points balance
-    const pointsText = `★ ${pointsBalance}`;
-    ctx.fillStyle = COLORS.textOutline;
-    for (const [ox, oy] of [[-2, -2], [-2, 2], [2, -2], [2, 2], [-2, 0], [2, 0], [0, -2], [0, 2]]) {
-      ctx.fillText(pointsText, scoreX + ox, currentY + oy);
-    }
-    ctx.fillStyle = '#FFD700'; // Gold color for points
-    ctx.fillText(pointsText, scoreX, currentY);
-
-    // Show hint for guests
-    if (!isAuthenticated) {
-      ctx.font = 'bold 8px "Press Start 2P", monospace';
+      // Hint below
       const hintText = 'Sign in to save';
       ctx.fillStyle = COLORS.textOutline;
       for (const [ox, oy] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) {
-        ctx.fillText(hintText, scoreX + ox, currentY + 18 + oy);
+        ctx.fillText(hintText, centerX + ox, statsY + 14 + oy);
       }
-      ctx.fillStyle = '#FFD700'; // Gold hint
-      ctx.fillText(hintText, scoreX, currentY + 18);
+      ctx.fillStyle = '#FFD700';
+      ctx.fillText(hintText, centerX, statsY + 14);
+      ctx.textAlign = 'left';
     }
 
     // =======================================================================
@@ -359,7 +385,7 @@ export default function HomeScreen({ onStart, isAuthenticated, userDisplayName, 
     // Continue animation loop
     // eslint-disable-next-line react-hooks/immutability -- Intentional ref mutation for animation loop
     animationRef.current = requestAnimationFrame(render);
-  }, [isPlayPressed, isScorePressed, isShopPressed, isAccountPressed, isSettingsPressed, bestScore, pointsBalance, isAuthenticated, userDisplayName, getScaleFactor]);
+  }, [isPlayPressed, isScorePressed, isShopPressed, isAccountPressed, isSettingsPressed, bestScore, pointsBalance, isAuthenticated, userDisplayName, getScaleFactor, equippedSkin, equippedTrail]);
 
   // Start animation loop
   useEffect(() => {

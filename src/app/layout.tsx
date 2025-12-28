@@ -5,6 +5,10 @@ import Providers from "@/components/Providers";
 export const metadata: Metadata = {
   title: "Flappy Bird Plus",
   description: "A Flappy Bird clone with accounts, leaderboard, and shop",
+  icons: {
+    icon: "/logo_transparent_bg.png",
+    apple: "/logo_transparent_bg.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

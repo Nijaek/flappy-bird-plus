@@ -1,36 +1,99 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Flappy Bird Plus
+
+A modern, feature-rich Flappy Bird clone built with Next.js, featuring pixel-perfect canvas rendering, user accounts, global leaderboards, and a cosmetic shop.
+
+## Features
+
+- **Classic Gameplay** - Tap or press space to flap through pipes
+- **Pixel Art Graphics** - Canvas-based rendering with animated backgrounds, parallax scrolling, and smooth 60fps gameplay
+- **User Accounts** - Sign in with Google or play as a guest
+- **Global Leaderboard** - Compete for the highest score worldwide
+- **Points System** - Earn points from gameplay to spend in the shop
+- **Cosmetic Shop** - Unlock bird skins and trail effects
+- **Sound Effects** - Retro-style audio for flapping, scoring, and collisions
+- **Responsive Design** - Works on desktop and mobile devices
+
+## Tech Stack
+
+- **Framework**: Next.js 16 with App Router
+- **Frontend**: React 19, TypeScript, Tailwind CSS 4
+- **Database**: PostgreSQL with Prisma ORM
+- **Caching**: Redis (ioredis)
+- **Authentication**: NextAuth.js v5 (Google OAuth + credentials)
 
 ## Getting Started
 
-First, run the development server:
+### Prerequisites
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+- Node.js 18+
+- PostgreSQL database
+- Redis instance (optional, for caching)
+
+### Environment Variables
+
+Create a `.env` file with:
+
+```env
+DATABASE_URL="postgresql://..."
+AUTH_SECRET="your-auth-secret"
+AUTH_GOOGLE_ID="your-google-client-id"
+AUTH_GOOGLE_SECRET="your-google-client-secret"
+REDIS_URL="redis://..."
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Installation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+# Install dependencies
+npm install
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+# Generate Prisma client
+npx prisma generate
 
-## Learn More
+# Run database migrations
+npx prisma db push
 
-To learn more about Next.js, take a look at the following resources:
+# Seed shop items
+npm run seed:items
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Start development server
+npm run dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Open [http://localhost:3000](http://localhost:3000) to play.
 
-## Deploy on Vercel
+## Scripts
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| Command | Description |
+|---------|-------------|
+| `npm run dev` | Start development server with HTTPS |
+| `npm run build` | Build for production |
+| `npm run start` | Start production server |
+| `npm run lint` | Run ESLint |
+| `npm run seed:items` | Seed shop items to database |
+| `npm run sync-leaderboard` | Sync leaderboard cache |
+| `npm run cleanup-tokens` | Clean up expired game tokens |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Project Structure
+
+```
+src/
+├── app/              # Next.js App Router pages & API routes
+│   ├── api/          # Backend API endpoints
+│   │   ├── auth/     # Authentication routes
+│   │   ├── game/     # Game session management
+│   │   ├── leaderboard/  # Leaderboard queries
+│   │   ├── runs/     # Score submission
+│   │   └── shop/     # Shop & purchases
+│   └── page.tsx      # Main game page
+├── components/       # React components
+├── contexts/         # React contexts (audio)
+├── game/             # Game engine (renderer, constants, trails)
+├── hooks/            # Custom React hooks
+├── lib/              # Utilities (Prisma, Redis, auth config)
+└── types/            # TypeScript type definitions
+```
+
+## License
+
+MIT

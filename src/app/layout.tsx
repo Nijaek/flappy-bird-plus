@@ -6,8 +6,8 @@ export const metadata: Metadata = {
   title: "nijae.dev | Flappy Bird Plus",
   description: "A Flappy Bird clone with accounts, leaderboard, and shop",
   icons: {
-    icon: "/logo_transparent_bg.png",
-    apple: "/logo_transparent_bg.png",
+    icon: "/favicon.svg",
+    apple: "/favicon.svg",
   },
   appleWebApp: {
     capable: true,

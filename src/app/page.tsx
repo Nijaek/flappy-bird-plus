@@ -265,17 +265,6 @@ export default function Home() {
 
   return (
     <>
-      {/* Logo link to nijae.dev */}
-      <a
-        href="https://nijae.dev"
-        className="fixed top-4 left-4 z-50 transition-transform duration-150 hover:scale-110"
-      >
-        <img
-          src="/logo_transparent_bg.png"
-          alt="nijae.dev"
-          className="w-10 h-10"
-        />
-      </a>
       {gameState === 'home' && (
         <HomeScreen
           onStart={handleGoToGetReady}
